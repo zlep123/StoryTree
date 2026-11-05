@@ -1,6 +1,6 @@
 # StoryTree
 
-StoryTree is a portable Windows editor for game scripts and branching narratives. Build a story on a node canvas, reuse characters and items across scenes, and preview how events and choices change a route.
+StoryTree is a portable Windows editor for game scripts and branching narratives which was inspired by Arrow 3.1. Build a story on a node canvas, reuse characters and items across scenes, and preview how events and choices change a route.
 
 **[Download for Windows (x64)](https://github.com/zlep123/StoryTree/releases/download/v1.0.0/StoryTree-1.0.0-win-x64.zip)** · [Release notes and checksum](https://github.com/zlep123/StoryTree/releases/tag/v1.0.0) · [中文使用说明](docs/README.zh-CN.md)
 
