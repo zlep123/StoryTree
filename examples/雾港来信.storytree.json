@@ -1,0 +1,471 @@
+{
+  "version": 1,
+  "id": "project_bbf2638e-d923-4c6f-bd9b-101bf51334c6",
+  "title": "雾港来信",
+  "revision": 0,
+  "currentSceneId": "scene_3c69ebd3-6fd4-4b1e-9c14-8f262d6f576c",
+  "definitions": {
+    "skills": [
+      "观察",
+      "交涉",
+      "战斗",
+      "学识"
+    ],
+    "attributes": [
+      "生命",
+      "体力",
+      "意志"
+    ]
+  },
+  "characters": [
+    {
+      "id": "char_mira",
+      "name": "米拉卡",
+      "summary": "不太守时的旅人，擅长观察细微的变化。",
+      "details": "她在清晨抵达雾港。那封从未署名的信，是她此行唯一的线索。",
+      "image": "",
+      "tags": [
+        "旅人",
+        "主角"
+      ],
+      "groupId": "group_main",
+      "skills": {
+        "观察": 7,
+        "交涉": 4,
+        "战斗": 5,
+        "学识": 3
+      },
+      "attributes": {
+        "生命": 80,
+        "体力": 65,
+        "意志": 70
+      },
+      "inventory": {
+        "item_letter": 1,
+        "item_coin": 10
+      },
+      "itemAttributes": {}
+    },
+    {
+      "id": "char_ferryman",
+      "name": "渡鸦",
+      "summary": "港口的摆渡人，似乎认识每一个秘密。",
+      "details": "",
+      "image": "",
+      "tags": [
+        "雾港",
+        "同行者"
+      ],
+      "groupId": "group_main",
+      "skills": {
+        "观察": 6,
+        "交涉": 5,
+        "战斗": 4,
+        "学识": 5
+      },
+      "attributes": {
+        "生命": 90,
+        "体力": 75,
+        "意志": 60
+      },
+      "inventory": {
+        "item_coin": 4
+      },
+      "itemAttributes": {}
+    }
+  ],
+  "items": [
+    {
+      "id": "item_letter",
+      "name": "密封的来信",
+      "summary": "封口上印着一枚银色的月亮。",
+      "details": "",
+      "category": "任务物品",
+      "type": "道具",
+      "grade": "稀世",
+      "tags": [],
+      "attributes": {
+        "完整度": 100
+      }
+    },
+    {
+      "id": "item_coin",
+      "name": "银币",
+      "summary": "旧王国发行的通用货币。",
+      "details": "",
+      "category": "单机物品",
+      "type": "材料",
+      "grade": "普通",
+      "tags": [],
+      "attributes": {
+        "耐久": 20
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "group_main",
+      "name": "雾港同行者"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scene_3c69ebd3-6fd4-4b1e-9c14-8f262d6f576c",
+      "name": "01 · 雾港的清晨",
+      "summary": "一封来信，让原本平静的港口发生了变化。",
+      "characters": {
+        "char_mira": {
+          "id": "char_mira",
+          "name": "米拉卡",
+          "summary": "不太守时的旅人，擅长观察细微的变化。",
+          "details": "她在清晨抵达雾港。那封从未署名的信，是她此行唯一的线索。",
+          "image": "",
+          "tags": [
+            "旅人",
+            "主角"
+          ],
+          "groupId": "group_main",
+          "skills": {
+            "观察": 7,
+            "交涉": 4,
+            "战斗": 5,
+            "学识": 3
+          },
+          "attributes": {
+            "生命": 80,
+            "体力": 65,
+            "意志": 70
+          },
+          "inventory": {
+            "item_letter": 1,
+            "item_coin": 10
+          },
+          "itemAttributes": {}
+        },
+        "char_ferryman": {
+          "id": "char_ferryman",
+          "name": "渡鸦",
+          "summary": "港口的摆渡人，似乎认识每一个秘密。",
+          "details": "",
+          "image": "",
+          "tags": [
+            "雾港",
+            "同行者"
+          ],
+          "groupId": "group_main",
+          "skills": {
+            "观察": 6,
+            "交涉": 5,
+            "战斗": 4,
+            "学识": 5
+          },
+          "attributes": {
+            "生命": 90,
+            "体力": 75,
+            "意志": 60
+          },
+          "inventory": {
+            "item_coin": 4
+          },
+          "itemAttributes": {}
+        }
+      },
+      "overrides": [],
+      "view": {
+        "x": 70,
+        "y": 70,
+        "zoom": 1
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node_arrival",
+      "sceneId": "scene_3c69ebd3-6fd4-4b1e-9c14-8f262d6f576c",
+      "type": "dialogue",
+      "title": "渡口的相遇",
+      "summary": "雾中的第一个声音",
+      "date": "1024.04.16",
+      "x": 80,
+      "y": 130,
+      "refs": [
+        {
+          "kind": "character",
+          "id": "char_mira"
+        },
+        {
+          "kind": "character",
+          "id": "char_ferryman"
+        }
+      ],
+      "lines": [
+        {
+          "characterId": "char_ferryman",
+          "text": "你迟到了。潮水可不会等人。"
+        },
+        {
+          "characterId": "char_mira",
+          "text": "我在找这封信的主人。"
+        }
+      ],
+      "speakerId": "",
+      "text": "",
+      "eventType": "自定义",
+      "factions": {
+        "A": [],
+        "B": []
+      },
+      "operations": [],
+      "condition": {
+        "mode": "manual",
+        "value": true,
+        "description": "",
+        "sourceEventId": "",
+        "rollback": "all",
+        "excludedCharacters": [],
+        "rules": [],
+        "logic": "all"
+      },
+      "targetNodeId": "",
+      "labelQuery": {
+        "entity": "character",
+        "tags": []
+      },
+      "outputs": [
+        "继续"
+      ]
+    },
+    {
+      "id": "node_trade",
+      "sceneId": "scene_3c69ebd3-6fd4-4b1e-9c14-8f262d6f576c",
+      "type": "event",
+      "title": "将信交给渡鸦",
+      "summary": "一封信，换取一条通向旧城的线索。",
+      "date": "1024.04.16",
+      "x": 460,
+      "y": 160,
+      "refs": [
+        {
+          "kind": "character",
+          "id": "char_mira"
+        },
+        {
+          "kind": "character",
+          "id": "char_ferryman"
+        }
+      ],
+      "lines": [
+        {
+          "characterId": "",
+          "text": ""
+        }
+      ],
+      "speakerId": "",
+      "text": "",
+      "eventType": "交易",
+      "factions": {
+        "A": [
+          "char_mira"
+        ],
+        "B": [
+          "char_ferryman"
+        ]
+      },
+      "operations": [
+        {
+          "kind": "transfer",
+          "characterId": "char_mira",
+          "toCharacterId": "char_ferryman",
+          "itemId": "item_letter",
+          "value": 1
+        }
+      ],
+      "condition": {
+        "mode": "manual",
+        "value": true,
+        "description": "",
+        "sourceEventId": "",
+        "rollback": "all",
+        "excludedCharacters": [],
+        "rules": [],
+        "logic": "all"
+      },
+      "targetNodeId": "",
+      "labelQuery": {
+        "entity": "character",
+        "tags": []
+      },
+      "outputs": [
+        "继续"
+      ]
+    },
+    {
+      "id": "node_condition",
+      "sceneId": "scene_3c69ebd3-6fd4-4b1e-9c14-8f262d6f576c",
+      "type": "condition",
+      "title": "她是否赶上了渡船？",
+      "summary": "",
+      "date": "1024.04.16",
+      "x": 840,
+      "y": 145,
+      "refs": [],
+      "lines": [
+        {
+          "characterId": "",
+          "text": ""
+        }
+      ],
+      "speakerId": "",
+      "text": "",
+      "eventType": "自定义",
+      "factions": {
+        "A": [],
+        "B": []
+      },
+      "operations": [],
+      "condition": {
+        "mode": "manual",
+        "value": true,
+        "description": "如果米拉卡睡过了头，这次交换就不会发生。",
+        "sourceEventId": "node_trade",
+        "rollback": "all",
+        "excludedCharacters": [],
+        "rules": [],
+        "logic": "all"
+      },
+      "targetNodeId": "",
+      "labelQuery": {
+        "entity": "character",
+        "tags": []
+      },
+      "outputs": [
+        "真",
+        "假"
+      ]
+    },
+    {
+      "id": "node_city",
+      "sceneId": "scene_3c69ebd3-6fd4-4b1e-9c14-8f262d6f576c",
+      "type": "monologue",
+      "title": "旧城的入口",
+      "summary": "",
+      "date": "1024.04.17",
+      "x": 1220,
+      "y": 90,
+      "refs": [
+        {
+          "kind": "character",
+          "id": "char_mira"
+        }
+      ],
+      "lines": [
+        {
+          "characterId": "",
+          "text": ""
+        }
+      ],
+      "speakerId": "char_mira",
+      "text": "信离开手心的那一刻，雾仿佛消散了一些。她终于看清了河对岸的城门。",
+      "eventType": "自定义",
+      "factions": {
+        "A": [],
+        "B": []
+      },
+      "operations": [],
+      "condition": {
+        "mode": "manual",
+        "value": true,
+        "description": "",
+        "sourceEventId": "",
+        "rollback": "all",
+        "excludedCharacters": [],
+        "rules": [],
+        "logic": "all"
+      },
+      "targetNodeId": "",
+      "labelQuery": {
+        "entity": "character",
+        "tags": []
+      },
+      "outputs": [
+        "继续"
+      ]
+    },
+    {
+      "id": "node_wait",
+      "sceneId": "scene_3c69ebd3-6fd4-4b1e-9c14-8f262d6f576c",
+      "type": "monologue",
+      "title": "错过的清晨",
+      "summary": "",
+      "date": "1024.04.16",
+      "x": 1220,
+      "y": 410,
+      "refs": [
+        {
+          "kind": "character",
+          "id": "char_mira"
+        }
+      ],
+      "lines": [
+        {
+          "characterId": "",
+          "text": ""
+        }
+      ],
+      "speakerId": "",
+      "text": "渡船已经离岸。信仍在米拉卡的口袋里，等待下一次交付。",
+      "eventType": "自定义",
+      "factions": {
+        "A": [],
+        "B": []
+      },
+      "operations": [],
+      "condition": {
+        "mode": "manual",
+        "value": true,
+        "description": "",
+        "sourceEventId": "",
+        "rollback": "all",
+        "excludedCharacters": [],
+        "rules": [],
+        "logic": "all"
+      },
+      "targetNodeId": "",
+      "labelQuery": {
+        "entity": "character",
+        "tags": []
+      },
+      "outputs": [
+        "继续"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_1",
+      "from": "node_arrival",
+      "to": "node_trade",
+      "output": 0
+    },
+    {
+      "id": "edge_2",
+      "from": "node_trade",
+      "to": "node_condition",
+      "output": 0
+    },
+    {
+      "id": "edge_3",
+      "from": "node_condition",
+      "to": "node_city",
+      "output": 0
+    },
+    {
+      "id": "edge_4",
+      "from": "node_condition",
+      "to": "node_wait",
+      "output": 1
+    }
+  ],
+  "audit": [],
+  "createdAt": "2026-11-04T14:32:08.691Z"
+}

@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "id": "project_cf9fde11-2a3b-4550-9d6c-31f0b979d1a6",
+  "title": "新的故事",
+  "revision": 0,
+  "currentSceneId": "scene_4a67a739-b0b0-4507-8006-50cbaefd8d60",
+  "definitions": {
+    "skills": [
+      "观察",
+      "交涉",
+      "战斗",
+      "学识"
+    ],
+    "attributes": [
+      "生命",
+      "体力",
+      "意志"
+    ]
+  },
+  "characters": [],
+  "items": [],
+  "groups": [],
+  "scenes": [
+    {
+      "id": "scene_4a67a739-b0b0-4507-8006-50cbaefd8d60",
+      "name": "第一幕",
+      "summary": "",
+      "characters": {},
+      "overrides": [],
+      "view": {
+        "x": 70,
+        "y": 70,
+        "zoom": 1
+      }
+    }
+  ],
+  "nodes": [],
+  "edges": [],
+  "audit": [],
+  "createdAt": "2026-11-04T14:32:08.695Z"
+}
