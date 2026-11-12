@@ -1,11 +1,22 @@
 {
   "name": "storytree",
   "productName": "StoryTree",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "本地剧情画布、角色状态与故事树",
   "main": "main.cjs",
   "private": true,
-  "scripts": {"start": "electron .", "test": "node --test test/*.test.cjs", "build": "node build.cjs"},
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "build": "node build.cjs"
+  },
   "license": "UNLICENSED",
-  "devDependencies": {"electron": "45.2.2", "playwright-core": "1.56.1", "rcedit": "5.0.2"}
+  "devDependencies": {
+    "electron": "45.2.2",
+    "playwright-core": "1.56.1",
+    "rcedit": "5.0.2"
+  },
+  "dependencies": {
+    "read-excel-file": "9.3.12"
+  }
 }

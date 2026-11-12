@@ -1,0 +1,39 @@
+{
+  "apiVersion": 1,
+  "id": "storytree.scene-review",
+  "version": "1.0.0",
+  "name": "场景检查",
+  "description": "检查当前场景中缺少日期、地点或正文的节点。可以跳转查看，也可以将检查结果生成大纲。",
+  "permissions": [
+    "project.read",
+    "project.write"
+  ],
+  "actions": [
+    {
+      "id": "review",
+      "title": "检查当前场景",
+      "context": "scene",
+      "fields": [
+        {
+          "id": "includeNodeCount",
+          "type": "boolean",
+          "label": "显示场景 ID"
+        }
+      ]
+    },
+    {
+      "id": "outline",
+      "title": "生成场景检查大纲",
+      "context": "scene",
+      "fields": [
+        {
+          "id": "title",
+          "type": "text",
+          "label": "大纲标题",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "source": "function review({project,sceneId,inputs}){\n  const scene=project.scenes.find(entry=>entry.id===sceneId);\n  const nodes=project.nodes.filter(node=>node.sceneId===sceneId);\n  const issues=[];\n  for(const node of nodes){\n    const missing=[];\n    if(!node.date)missing.push('日期');\n    if(!node.locationId)missing.push('地点');\n    const hasText=[node.summary,node.text,node.condition?.description,...node.lines.map(line=>line.text)]\n      .some(value=>typeof value==='string'&&value.trim());\n    if(!hasText)missing.push('正文');\n    if(missing.length)issues.push({node,missing});\n  }\n  const lines=[scene.name+' · 共 '+nodes.length+' 个节点，'+issues.length+' 个待检查'];\n  for(const {node,missing} of issues.slice(0,100))lines.push('• '+node.title.slice(0,100)+' · '+missing.join('、'));\n  if(issues.length>100)lines.push('另有 '+(issues.length-100)+' 个节点');\n  if(!issues.length)lines.push('当前场景的节点已填写日期、地点和正文。');\n  if(inputs?.includeNodeCount)lines.push('场景 ID '+sceneId);\n  return {message:lines.join('\\n'),links:issues.slice(0,100).map(({node})=>({nodeId:node.id,label:node.title.slice(0,160)||node.id}))};\n}\nStoryTree.register({\n  review,\n  outline(context){\n    const result=review(context);\n    const title=context.inputs.title.trim();\n    if(!title)throw Error('请输入大纲标题。');\n    return {...result,commands:[{type:'outline.create',args:{title,text:result.message}}]};\n  }\n});"
+}

@@ -7,6 +7,12 @@ catch(e){try{const pid=Number(fs.readFileSync(lock));process.kill(pid,0);process
 const cleanup=()=>{try{fs.closeSync(fd);if(Number(fs.readFileSync(lock))===process.pid)fs.unlinkSync(lock);}catch{}};
 process.on('exit',cleanup);
 startServer(directory).then(info=>{
- const stop=()=>{info.server.closeAllConnections();info.server.close(()=>process.exit(0));};process.on('SIGTERM',stop);process.on('SIGINT',stop);
+ let stopping=false;
+ const stop=()=>{
+   if(stopping)return;
+   stopping=true;
+   info.server.close(()=>info.store.queue.finally(()=>process.exit(0)));
+ };
+ process.on('SIGTERM',stop);process.on('SIGINT',stop);
  setInterval(()=>{if(Date.now()-info.lastAccess()>15*60*1000)stop();},30000).unref();
 }).catch(e=>{process.stderr.write(e.stack+'\n');process.exit(1);});
