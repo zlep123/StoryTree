@@ -1,37 +1,82 @@
-# StoryTree 1.2.0
+# StoryTree
 
-StoryTree is a portable Windows editor for branching game scripts. Write scenes on a node canvas, reuse character and item cards, and simulate how choices and events change a route.
+StoryTree is a portable Windows editor for game scripts and branching narratives which was inspired by Arrow 3.1. Build a story on a node canvas, reuse characters and items across scenes, and preview how events and choices change a route.
 
-The canvas and inspector take inspiration from Arrow 3.1.
+**[Download StoryTree 1.2.0 for Windows (x64)](https://github.com/zlep123/StoryTree/releases/download/v1.2.0/StoryTree-1.2.0-win-x64.zip)** · [Release notes and checksums](https://github.com/zlep123/StoryTree/releases/tag/v1.2.0) · [中文使用说明](docs/README.zh-CN.md)
 
-**[Download for Windows x64](https://github.com/zlep123/StoryTree/releases/download/v1.2.0/StoryTree-1.2.0-win-x64.zip)** · [Release notes and checksums](https://github.com/zlep123/StoryTree/releases/tag/v1.2.0) · [Two-minute bilingual demo](https://github.com/zlep123/StoryTree/releases/download/v1.2.0/StoryTree-1.2.0-Demo-ZH-EN.mp4) · [中文说明](docs/README.zh-CN.md)
+[Two-minute hands-on tutorial, Chinese and English](https://github.com/zlep123/StoryTree/releases/download/v1.2.0/StoryTree-1.2.0-Tutorial-ZH-EN.mp4) · [Original 1.2.0 feature and plugin video](https://github.com/zlep123/StoryTree/releases/download/v1.2.0/StoryTree-1.2.0-Demo-ZH-EN.mp4)
 
-![StoryTree's branching node canvas, asset library, and Story Tree](docs/canvas.png)
+![StoryTree's node canvas with the asset library on the left and branching Story Tree on the right](docs/canvas.png)
 
-## Get started
+## What's new in 1.2.0
 
-1. Extract the ZIP to a writable folder and launch `StoryTree.exe`. The first launch opens *A Letter from Mist Harbor*. Use the project menu to start a blank story or **Open** to load a `.storytree.json` project.
-2. Right-click the canvas to add a dialogue, monologue, condition, jump, event, or label node. Connect an output on the right of one node to the input on the left of the next. Select a node to edit its text, date, and location.
-3. Drag characters and items from the library into nodes. Use **Simulate** to follow a branch, test player input, and see pending changes to skills, attributes, or inventory.
-4. Open **Story Tree** to read branches and connected story excerpts, or create a segmented outline with date and location ranges and links to story assets.
-5. Use **Settings** to switch between Simplified Chinese and English or check for updates. **Save** commits pending edits. **Export** produces a portable project file with its images.
+- The node inspector, expanded dialogue editor, and outline editor have separate **Find** and **Replace** controls. The **Replace** button beside project search previews matches across the current scene or the whole project. Select the fields to change and apply the batch. One undo restores the selected edits.
+- The scene map supports drag selection and group movement. Use **Map Layers** to hide or lock the background, locations and routes, characters, or objects. StoryTree saves the layer preferences locally.
+- The release includes TXT script import, Excel card import, a segmented outline editor, character variables, and an updated dialogue log. It also includes the local MCP launcher and **Plugin API 1**, with a [Scene Counter example](examples/scene-count.storytree-plugin.json) and [plugin development guide](docs/PLUGINS.en.md).
 
-## Edit a project
+The [1.2.0 release notes](https://github.com/zlep123/StoryTree/releases/tag/v1.2.0) and [original 1.0.0 release notes](https://github.com/zlep123/StoryTree/releases/tag/v1.0.0) record both public releases. The [original English guide](https://github.com/zlep123/StoryTree/blob/9ec1537e92521482caec6d63242f7cd18b4ba9d4/README.md) and [original Chinese guide](https://github.com/zlep123/StoryTree/blob/9ec1537e92521482caec6d63242f7cd18b4ba9d4/docs/README.zh-CN.md) describe the 1.0 interface.
 
-- **Dialogue** supports ordered turn-taking, same-speaker continuation, and per-line rules. Use **Expand** beside a line or **Edit dialogue log** to edit a node's dialogue together. **Node log** can also export a UTF-8 text report.
-- **Find** and **Replace** have separate controls in the node inspector, expanded dialogue editor, and outline editor. Use Ctrl+F or Ctrl+H within a text field. The **Replace** button beside project search previews changes across nodes in the current scene or all scenes. Select the fields to update, then apply the batch. Character variable links are preserved.
-- **Scene map** lets you position locations, characters, and geometric or image objects. Drag on empty space to select a group and hold Shift to add to it. Open **Map layers** to hide or lock the background, locations and routes, characters, or objects. Layer preferences are local to the installation.
-- **Import Script** previews nodes from a TXT script with headings and speaker lines. Missing dates can stay undated. **Import Excel** imports character and item cards from an XLSX workbook. Start with the [Excel template](examples/Excel-Import-Template.xlsx) or [script sample](examples/Mist-Harbor-Script.txt).
+## Quick start
+
+1. Extract the Windows ZIP to a folder you can write to and double-click `StoryTree.exe`. Keep the extracted files together. The package includes its runtime.
+2. Try the built-in *A Letter from Mist Harbor* demo. To start your own project, click the story title and choose **New Blank Story**. You can also open a `.storytree.json` file with **Open**.
+3. Right-click the canvas or choose **Add Node**. Select a node to edit its name, text, story date, and location in the inspector. To connect nodes, click the source output on the right and then the destination input on the left. Dialogue, monologue, and event nodes can have multiple outputs.
+4. Drag character and item cards from the asset library into a node. Click **Simulate** to choose a route and inspect how the characters and inventory change.
+5. Open **Story Tree** in the canvas toolbar. **Branches** shows parallel routes, **Story overview** reads the connected scenes in sequence, and the outline tab holds your plan. Use date and location filters to narrow the view. Click a card to locate its node on the canvas.
+
+Use **Settings** at the bottom left to switch between English and Simplified Chinese, adjust interface and node fonts, set the zoom level for the compact node overview, and check for updates. Hold **Space** and drag to pan, and scroll to zoom. The lower-right minimap shows the current viewport. **Fit Canvas** frames the whole scene. Double-click a scene tab or its library entry to rename it.
+
+## What you can build
+
+| Feature | How it works |
+| --- | --- |
+| **Six node types** | Dialogue, monologue, condition, jump, event, and label. Press **Enter** to continue a dialogue line. In manual mode, use **Tab** to switch speakers in the picker. |
+| **Reusable assets** | Characters carry skills, attributes, items, and tags. Item cards can be stacked in inventories. Groups support batch changes and dragging several characters into a scene or node. Item presets bundle reusable quantities for a character's inventory. |
+| **Scene snapshots** | A character can have independent starting state in each scene. Jump nodes connect to targets across scenes or dates. |
+| **Stateful events** | Record pending changes for battles, trades, and custom events. A following condition can roll back the whole event or changes involving selected characters. |
+| **Branches, dates, and outlines** | Inspect the story graph, filter it by date and location, and jump from the Story Tree to the canvas. Dates can be typed or picked with year, month, and day wheels. |
+| **Search and local saves** | Use **Ctrl+F** outside an editor to search the project. Edits save automatically, **Save** commits pending edits, and **Export** saves a portable project copy. |
+
+### Dialogue, events, and character variables
+
+- Set a dialogue node's default speakers and turn order in the inspector. Each line can use its own rule. **Finish and continue** or **Enter** inserts a new line with that line's rule. Use **Shift+Enter** to break a line inside the same entry.
+- Click **Expand** for a larger single-line editor. **Edit dialogue log** lets you edit all the dialogue in a dialogue or event node. Use a character ID followed by a colon for each entry. Leave the ID blank for narration. **Node log** previews or exports the complete text of any node as UTF-8 TXT.
+- Event nodes can contain dialogue and pending changes to characters, inventory, skills, or attributes. An event can be followed by a condition that rolls back changes when appropriate. **Simulate** lets you switch conditions or choose a branch and inspect the result.
+- A character card has a stable ID and a separate in-game display name. In a node, use **Pending changes → Add change → Character name** to set the name or collect player input. Use **Insert character variable** to reference a field such as a name, skill, or item. Click the resulting link to see its value in context.
+
+### Find and replace
+
+Use **Find** or **Replace** in the inspector, expanded dialogue editor, or outline editor. **Ctrl+F** finds text in the active editor. **Ctrl+H** also shows the replacement field. Use **Replace** for the current match or **Replace all** for the current field.
+
+To edit text across nodes, click **Replace** beside project search. Enter the old and new text, choose the current scene or all scenes, and click **Preview replacements**. Select the fields you want to edit, then click **Replace selected**. The preview preserves character variable references, and outline editing preserves asset links.
+
+### Scene maps, locations, and story outlines
+
+- Create locations in the asset library and assign them to nodes in the inspector or by dragging location cards. A node created inside a location region inherits that location. Child locations can have their own colors and submaps.
+- Open **Scene map** from the canvas toolbar. Place locations from the sidebar or by dragging their cards onto the map. Double-click a location to open its submap. Drag an area to move it, resize it from its corner, and use **Connect route** to link places. A gallery image can serve as the background.
+- Drag a character card onto the map or choose it in **Place character**. Add rectangles, ellipses, triangles, or **Custom object** images. Right-click objects to copy, duplicate, or delete them. Drag from empty space to box-select placements, hold **Shift** to add to the selection, and drag any selected placement to move the group.
+- In **Map Layers**, use **Hide** to change what you see and **Lock** to protect placements while editing other layers. **Map guide** shows the layout on the story canvas.
+- Open **Story Tree → Story overview** to read node excerpts along a selected route. Expand the tree to get more room. Create a segmented outline with date and location ranges, and drag node or asset links into its text to navigate back to the source.
+
+### Import scripts, cards, and concept art
+
+- Open **Import Script** to preview a TXT script as scenes, dialogue, and prose nodes. Headings such as `# The Wharf` and lines such as `Raven: Keep the lamp lit.` help identify the structure. A line such as `Date: 1024.04.16` dates the following nodes. Unclear dates can stay undated for review.
+- In **Characters** or **Items**, use **Import Excel** to preview cards from a workbook. Start with the included [Excel template](examples/Excel-Import-Template.xlsx). The [TXT example](examples/Mist-Harbor-Script.txt) demonstrates script import.
+- Use **Concept Art** to keep reference maps, character designs, and environment images. Images can also be placed on a scene map or exported with the project.
+
+### Project files and backups
+
+The app stores the current project at `data/story.storytree.json` beside the executable, with recent backups in `data/backups` and shared portraits and concept art in `data/media`. To keep separate projects, export each one as its own `.storytree.json` file. To move a working installation, close StoryTree before copying its entire `data` directory. A standalone export includes the images needed by that project.
 
 ## Build a plugin
 
-StoryTree 1.2.0 uses **Plugin API 1**. Open **Plugins → Install or update plugin**, select the [Scene Counter example](examples/scene-count.storytree-plugin.json), then enable and run it. To develop your own package, define its ID, version, permissions, actions, and a JavaScript `source` string that calls `StoryTree.register`. Packages can update independently of the app. See the [English quick start](docs/PLUGINS.en.md) or [中文 API 参考](docs/PLUGINS.md).
+StoryTree 1.2.0 uses **Plugin API 1**. Open **Plugins → Install or update plugin**, select the [Scene Counter example](examples/scene-count.storytree-plugin.json), then enable it and run **Count nodes**. To create your own package, define its ID, version, permissions, actions, and a JavaScript `source` string that calls `StoryTree.register`. See the [English quick start](docs/PLUGINS.en.md) or [中文 API 参考](docs/PLUGINS.md).
 
 ## Connect an AI agent
 
-The **AI / MCP** menu supplies a configuration using your actual installation path. `StoryTree.MCP.exe` is a local stdio MCP server. Its tools can read and edit the current project, connect nodes, simulate routes, and inspect the story timeline. Read `storytree://schema` for the project model and commands.
+Open **AI / MCP** in StoryTree to get the configuration for your actual installation path. The bundled `StoryTree.MCP.exe` is a local stdio MCP server. Compatible clients can read and edit the project, connect nodes, simulate a route, and inspect the story timeline.
 
-Example Codex configuration:
+For example, add this block to the Codex `config.toml` and replace the path with your own installation:
 
 ```toml
 [mcp_servers.storytree]
@@ -39,19 +84,31 @@ command = 'C:\Apps\StoryTree\StoryTree.MCP.exe'
 args = []
 ```
 
-## Project files and upgrades
+For a client that accepts JSON:
 
-StoryTree saves the working project in `data/story.storytree.json` next to the executable. Backups and shared media live under `data/backups` and `data/media`. To move an installation, close the app and copy its entire `data` directory, or export a standalone project and open it in the destination installation.
+```json
+{
+  "mcpServers": {
+    "storytree": {
+      "command": "C:\\Apps\\StoryTree\\StoryTree.MCP.exe",
+      "args": []
+    }
+  }
+}
+```
+
+Restart the client after adding the configuration. The MCP and desktop app share the same local project. The `storytree://schema` resource documents the data model and event operations.
 
 ## Build from source
 
-Use Windows x64, Node.js 22.12 or later, and the Windows .NET Framework C# compiler.
+Use Windows x64 with Node.js 22.12 or newer and the Windows .NET Framework C# compiler. From the repository root:
 
 ```powershell
 npm ci
 npm test
 npm start
-npm run build
 ```
 
-The build writes a portable folder to `dist/StoryTree-1.2.0-win-x64`. Pass an empty output directory with `npm run build -- <directory>`.
+Run `npm run build` to produce the portable app under `dist/StoryTree-1.2.0-win-x64`. A custom output directory can be supplied with `npm run build -- <directory>`. The build includes the desktop executable, MCP launcher, script and Excel examples, sample plugins, and runtime notices. The GitHub Release ZIP contains the runnable app, while GitHub's generated source archives contain the tagged repository.
+
+StoryTree was inspired by Arrow's node-canvas workflow. Electron and Chromium notices ship in the Windows package.
