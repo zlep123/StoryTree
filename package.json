@@ -1,7 +1,7 @@
 {
   "name": "storytree",
   "productName": "StoryTree",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "description": "本地剧情画布、角色状态与故事树",
   "main": "main.cjs",
   "private": true,

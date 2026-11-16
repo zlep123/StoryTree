@@ -451,10 +451,12 @@ body { font-family: var(--story-font, StoryUI, "Segoe UI", "Microsoft YaHei", sa
 .location-card .name {overflow-wrap:anywhere}
 .location-card-controls {display:flex;align-items:center;gap:1px;flex:none}
 .location-card-controls button {display:grid;place-items:center;padding:3px}
-.location-card-controls .card-drag {align-self:center;padding:2px}
+.location-card .flex {min-width:0}
 .map-place-list .location-card {margin:0}
 .location-library-path {display:flex;align-items:center;gap:6px;margin:0 0 9px;color:#b9c6d7}
 .location-library-path span {overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.location-library-path .location-card-controls {margin-inline-start:auto}
+.location-editor .modal-footer {flex-wrap:wrap}
 .map-tools {display:flex;flex-wrap:wrap;gap:4px}
 .map-route-row {margin:7px 0;overflow-wrap:anywhere}
 .map-route-row>span,.map-notes {color:#b9c6d7;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -599,6 +601,16 @@ body { font-family: var(--story-font, StoryUI, "Segoe UI", "Microsoft YaHei", sa
 .item-set-members {min-height:54px;padding:7px;border:1px dashed #605879;border-radius:8px;background:#191f2b}
 .item-set-member {padding:4px 0;overflow-wrap:anywhere}
 .item-set-tray {margin-top:9px;max-height:140px;overflow:auto}
+.scene-library-card .flex {min-width:0}
+.scene-card-name {display:block;max-width:100%;padding:2px 0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scene-card-name:hover {background:transparent;text-decoration:underline}
+.entry-delete-dialog {width:min(440px, calc(100vw - 32px));max-height:90vh;margin:auto;padding:0;overflow:auto;color:#d0d9eb;background:#1d2230;border:1px solid #60546e;border-radius:12px;box-shadow:0 16px 55px #0009}
+.entry-delete-dialog::backdrop {background:#090a12b0}
+.entry-delete-dialog .modal-body {overflow:visible}
+.entry-delete-name {font-weight:600;overflow-wrap:anywhere}
+.entry-delete-effects {display:grid;gap:6px;list-style:none;margin:12px 0;padding:0}
+.entry-delete-effects:empty {display:none}
+.entry-delete-effects li {display:flex;justify-content:space-between;gap:12px}
 @media (max-width:700px) {
   .outline-editor-grid {grid-template-columns:minmax(0,1fr)}
   .outline-asset-panel {position:static}

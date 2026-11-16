@@ -955,6 +955,88 @@
     addCards(characters,'character');
     return {characters:characters.length,items:items.length};
   }
+  const deletableCollections={
+    scene:'scenes',character:'characters',item:'items',location:'locations',
+    group:'groups',itemSet:'itemSets',outline:'outline',art:'conceptArt'
+  };
+  function deletionImpact(p,kind,id) {
+    assert(Object.hasOwn(deletableCollections,kind),'无法删除此类型的内容');
+    const collection=deletableCollections[kind];
+    const entry=find({[collection]:p[collection]||[]},collection,id);
+    const maps=()=>p.scenes.flatMap(scene=>scene.maps||[]);
+    const count=(entries,test)=>entries.filter(test).length;
+    const effects={};
+    let blocked='';
+    if(kind==='scene'){
+      const ids=new Set(p.nodes.filter(node=>node.sceneId===id).map(node=>node.id));
+      effects.sceneNodes=ids.size;
+      effects.sceneEdges=count(p.edges,edge=>ids.has(edge.from)||ids.has(edge.to));
+      effects.externalNodes=count(p.nodes,node=>!ids.has(node.id)&&
+        (ids.has(node.targetNodeId)||ids.has(node.condition?.sourceEventId)));
+      effects.sceneCharacters=Object.keys(entry.characters).length;
+      effects.maps=entry.maps?.length||0;
+      if(p.scenes.length===1)blocked='项目至少需要保留一个场景';
+    }else if(kind==='character'){
+      const used=op=>op.characterId===id||op.toCharacterId===id;
+      effects.nodes=count(p.nodes,n=>n.refs.some(ref=>ref.kind==='character'&&ref.id===id)||
+        n.lines.some(line=>line.characterId===id||line.rule?.participants.includes(id))||
+        n.dialogueRule?.participants.includes(id)||n.speakerId===id||
+        n.factions?.A?.includes(id)||n.factions?.B?.includes(id)||n.operations.some(used)||
+        n.condition?.rules?.some(used)||n.condition?.excludedCharacters?.includes(id)||
+        nodeCharacterReferences(n).some(ref=>ref.characterId===id));
+      effects.scenes=count(p.scenes,s=>Object.hasOwn(s.characters,id)||s.overrides.some(used));
+      effects.mapMarkers=maps().reduce((sum,map)=>sum+count(map.elements||[],element=>element.kind==='character'&&element.characterId===id),0);
+      if(effects.nodes||effects.scenes)blocked='角色仍有剧情或场景引用，请先解除引用';
+    }else if(kind==='item'){
+      const used=op=>['item','transfer','itemAttribute'].includes(op.kind)&&op.itemId===id;
+      const carried=c=>Object.hasOwn(c.inventory||{},id)||Object.hasOwn(c.itemAttributes||{},id);
+      effects.nodes=count(p.nodes,n=>n.refs.some(ref=>ref.kind==='item'&&ref.id===id)||
+        n.operations.some(used)||n.condition?.rules?.some(rule=>rule.kind==='item'&&rule.key===id)||
+        nodeCharacterReferences(n).some(ref=>['item','inventory','itemAttributes'].includes(ref.field)&&ref.keys[0]===id));
+      effects.scenes=count(p.scenes,s=>Object.values(s.characters).some(carried)||
+        Object.values(s.currentMetadata||{}).some(carried)||s.overrides.some(used));
+      effects.characterCards=count(p.characters,carried);
+      effects.itemSets=count(p.itemSets||[],set=>set.entries.some(member=>member.kind==='item'&&member.id===id));
+      if(Object.values(effects).some(Boolean))blocked='物品仍在使用，请先解除引用';
+    }else if(kind==='location'){
+      const remainingMaps=maps().filter(map=>map.locationId!==id);
+      effects.children=count(p.locations,location=>location.parentId===id);
+      effects.nodes=count(p.nodes,node=>node.locationId===id);
+      effects.outlines=count(p.outline||[],outline=>outline.locationId===id);
+      effects.maps=count(maps(),map=>map.locationId===id);
+      effects.mapAreas=count(remainingMaps,map=>map.areas.some(area=>area.locationId===id));
+      effects.mapRoutes=remainingMaps.reduce((sum,map)=>sum+count(map.routes,route=>route.from===id||route.to===id),0);
+    }else if(kind==='group'){
+      const used=op=>op.kind==='characterField'&&op.key==='groupId'&&op.value===id;
+      effects.nodes=count(p.nodes,n=>n.operations.some(used));
+      effects.scenes=count(p.scenes,s=>s.overrides.some(used));
+      effects.members=count(entry.kind==='item'?p.items:p.characters,card=>card.groupId===id);
+      if(effects.nodes||effects.scenes)blocked='分组仍被剧情变化引用，请先移除对应变化';
+    }else if(kind==='itemSet'){
+      effects.itemSets=count(p.itemSets,set=>set.entries.some(member=>member.kind==='set'&&member.id===id));
+      if(effects.itemSets)blocked='此物品组合正在被其他组合使用';
+    }else if(kind==='art'){
+      const all=maps();
+      effects.mapBackgrounds=count(all,map=>map.backgroundArtId===id);
+      effects.mapImages=all.reduce((sum,map)=>sum+count(map.elements||[],element=>element.kind==='image'&&element.artId===id),0);
+    }
+    return {name:entry.name??entry.title,effects,blocked};
+  }
+  function requireDeletion(p,kind,id) {
+    const impact=deletionImpact(p,kind,id);
+    assert(!impact.blocked,impact.blocked);
+  }
+  function removeNodes(p,ids) {
+    p.nodes=p.nodes.filter(node=>!ids.has(node.id));
+    p.edges=p.edges.filter(edge=>!ids.has(edge.from)&&!ids.has(edge.to));
+    for(const node of p.nodes){
+      if(ids.has(node.targetNodeId))node.targetNodeId='';
+      if(ids.has(node.condition?.sourceEventId))node.condition.sourceEventId='';
+    }
+  }
+  function editSceneMaps(p,edit) {
+    for(const scene of p.scenes)if(scene.maps)scene.maps=scene.maps.map(edit).filter(map=>map&&hasMapContent(map));
+  }
   function command(p,cmd) {
     const a=cmd.args||{};let result={};
     switch(cmd.type) {
@@ -971,6 +1053,14 @@
       }
       case 'scene.create': {const s={id:a.id||uid('scene'),name:a.name||'新场景',summary:a.summary||'',characters:{},overrides:[],view:{x:70,y:70,zoom:1}};assert(!p.scenes.some(scene=>scene.id===s.id),'ID 重复');p.scenes.push(s);p.currentSceneId=s.id;result=s;break;}
       case 'scene.update': {const s=sceneOf(p,a.id);if(a.name!==undefined)assert(typeof a.name==='string' && a.name.trim(),'请输入名称');for(const k of ['name','summary','view'])if(a[k]!==undefined)s[k]=clone(a[k]);break;}
+      case 'scene.delete': {
+        requireDeletion(p,'scene',a.id);
+        const index=p.scenes.findIndex(scene=>scene.id===a.id);
+        p.scenes.splice(index,1);
+        removeNodes(p,new Set(p.nodes.filter(node=>node.sceneId===a.id).map(node=>node.id)));
+        if(p.currentSceneId===a.id)p.currentSceneId=p.scenes[Math.min(index,p.scenes.length-1)].id;
+        break;
+      }
       case 'scene.map.update': {
         const scene=find(p,'scenes',a.sceneId),locationId=a.locationId??'';
         assert(record(a.patch),'场景地图资料无效');
@@ -1006,18 +1096,20 @@
         if(!s.currentMetadata)s.currentMetadata={};s.currentMetadata[a.characterId]=Object.fromEntries(['name',...CHARACTER_FIELDS].map(k=>[k,target[k]]));
         Object.assign(master,clone(target));break;}
       case 'character.delete': {
-        find(p,'characters',a.id);
-        assert(!p.nodes.some(n=>n.refs.some(r=>r.kind==='character'&&r.id===a.id))&&!p.scenes.some(s=>s.characters[a.id]),'角色已在场景使用，请保留角色以维护历史');
-        for(const scene of p.scenes){
-          if(!scene.maps)continue;
-          for(const map of scene.maps)if(map.elements)map.elements=map.elements.filter(entry=>entry.kind!=='character'||entry.characterId!==a.id);
-          scene.maps=scene.maps.filter(hasMapContent);
-        }
+        requireDeletion(p,'character',a.id);
+        editSceneMaps(p,map=>{
+          if(map.elements)map.elements=map.elements.filter(entry=>entry.kind!=='character'||entry.characterId!==a.id);
+          return map;
+        });
         p.characters=p.characters.filter(x=>x.id!==a.id);
         break;
       }
       case 'item.create': {const i=item(a);p.items.push(i);result=i;break;}
       case 'item.update': {const old=find(p,'items',a.id);Object.assign(old,item({...old,...clone(a.patch),id:a.id}));break;}
+      case 'item.delete':
+        requireDeletion(p,'item',a.id);
+        p.items=p.items.filter(item=>item.id!==a.id);
+        break;
       case 'itemSet.create':
       case 'itemSet.update': {
         const sets=p.itemSets||=[];
@@ -1040,8 +1132,7 @@
         break;
       }
       case 'itemSet.delete':
-        find({...p,itemSets:p.itemSets||[]},'itemSets',a.id);
-        assert(!p.itemSets.some(set=>set.entries.some(entry=>entry.kind==='set'&&entry.id===a.id)),'此物品组合正在被其他组合使用');
+        requireDeletion(p,'itemSet',a.id);
         p.itemSets=p.itemSets.filter(set=>set.id!==a.id);
         break;
       case 'location.create':
@@ -1055,6 +1146,20 @@
         if(a.color!==undefined)location.color=a.color;
         if(cmd.type==='location.create')locations.push(location);
         result=location;
+        break;
+      }
+      case 'location.delete': {
+        requireDeletion(p,'location',a.id);
+        const location=find(p,'locations',a.id);
+        for(const child of p.locations)if(child.parentId===a.id)child.parentId=location.parentId||'';
+        p.locations=p.locations.filter(entry=>entry.id!==a.id);
+        for(const entry of [...p.nodes,...(p.outline||[])])if(entry.locationId===a.id)entry.locationId='';
+        editSceneMaps(p,map=>{
+          if(map.locationId===a.id)return null;
+          map.areas=map.areas.filter(area=>area.locationId!==a.id);
+          map.routes=map.routes.filter(route=>route.from!==a.id&&route.to!==a.id);
+          return map;
+        });
         break;
       }
       case 'location.assign': {
@@ -1081,11 +1186,19 @@
         break;
       }
       case 'outline.delete':
-        find({...p,outline:p.outline||[]},'outline',a.id);
+        requireDeletion(p,'outline',a.id);
         p.outline=p.outline.filter(entry=>entry.id!==a.id);
         break;
       case 'group.create': {const g={id:uid('group'),name:a.name||'新分组',...(a.kind?{kind:a.kind}:{})};p.groups.push(g);result=g;break;}
       case 'group.rename': {const g=find(p,'groups',a.id);assert(typeof a.name==='string' && a.name.trim(),'请输入名称');g.name=a.name.trim();break;}
+      case 'group.delete': {
+        requireDeletion(p,'group',a.id);
+        const cards=[...p.characters,...p.items,...p.scenes.flatMap(scene=>
+          [...Object.values(scene.characters),...Object.values(scene.currentMetadata||{})])];
+        for(const card of cards)if(card.groupId===a.id)card.groupId='';
+        p.groups=p.groups.filter(group=>group.id!==a.id);
+        break;
+      }
       case 'library.import': result=importLibrary(p,a);break;
       case 'art.create': {
         const art={id:a.id??uid('art'),name:a.name,category:a.category||'other',notes:a.notes||'',image:a.image};
@@ -1099,15 +1212,13 @@
         break;
       }
       case 'art.delete':
+        requireDeletion(p,'art',a.id);
         p.conceptArt=(p.conceptArt||[]).filter(art=>art.id!==a.id);
-        for(const scene of p.scenes){
-          if(!scene.maps)continue;
-          for(const map of scene.maps){
-            if(map.backgroundArtId===a.id)map.backgroundArtId='';
-            if(map.elements)map.elements=map.elements.filter(entry=>entry.kind!=='image'||entry.artId!==a.id);
-          }
-          scene.maps=scene.maps.filter(hasMapContent);
-        }
+        editSceneMaps(p,map=>{
+          if(map.backgroundArtId===a.id)map.backgroundArtId='';
+          if(map.elements)map.elements=map.elements.filter(entry=>entry.kind!=='image'||entry.artId!==a.id);
+          return map;
+        });
         break;
       case 'group.apply': {
         assert(groupsOf(p,'character').some(group=>group.id===a.groupId),'找不到角色分组');
@@ -1142,7 +1253,7 @@
         break;
       }
       case 'node.addOutput': {const n=find(p,'nodes',a.id);assert(['dialogue','monologue','event'].includes(n.type),'此类型不能增加输出点');n.outputs.push(a.label||`分支 ${n.outputs.length+1}`);break;}
-      case 'node.delete': {const ids=a.ids||[a.id];p.nodes=p.nodes.filter(n=>!ids.includes(n.id));p.edges=p.edges.filter(e=>!ids.includes(e.from)&&!ids.includes(e.to));for(const n of p.nodes){if(ids.includes(n.targetNodeId))n.targetNodeId='';if(ids.includes(n.condition.sourceEventId))n.condition.sourceEventId='';}break;}
+      case 'node.delete':removeNodes(p,new Set(a.ids||[a.id]));break;
       case 'node.transfer': {const ids=a.ids,s=sceneOf(p,a.sceneId),ns=p.nodes.filter(n=>ids.includes(n.id));assert(ns.length,'未选择节点');const map={};
         const sourceStates={};for(const sid of new Set(ns.map(n=>n.sceneId))){const t=trace({...p,currentSceneId:sid});sourceStates[sid]=t.history.find(h=>ids.includes(h.nodeId))?.before||clone(sceneOf(p,sid).characters);}
         for(const n of ns) {const newId=a.copy?uid('node'):n.id;map[n.id]=newId;for(const r of n.refs)if(r.kind==='character'&&!s.characters[r.id])s.characters[r.id]=clone(sourceStates[n.sceneId][r.id]||find(p,'characters',r.id));}
@@ -1181,5 +1292,5 @@
     p.nodes.push(d,e,c,m,f);p.edges=[{id:'edge_1',from:d.id,to:e.id,output:0},{id:'edge_2',from:e.id,to:c.id,output:0},{id:'edge_3',from:c.id,to:m.id,output:0},{id:'edge_4',from:c.id,to:f.id,output:1}];
     return p;
   }
-  return {TYPES,DIALOGUE_MODES,ITEM_A,ITEM_B,ITEM_C,ART_CATEGORIES,ART_FILE_LIMIT,ART_PROJECT_LIMIT,INVENTORY_LIMIT,MAP_SIZE,MAP_ELEMENT_MIN,MAP_SHAPES,MAP_LAYERS,uid,clone,find,sceneOf,sceneMap,groupsOf,hasDialogue,dialogueSpeakers,defaultDialogueRule,dialogueRuleAt,dialogueLogText,parseDialogueLog,nextDialogueSpeaker,dateKey,dateText,nodeDateKey,character,characterDisplayName,attributeToken,nodeAttributeReferences,resolveAttributeText,characterToken,characterTextParts,literalTextPattern,textMatches,replaceTextRanges,previewNodeTextReplacements,nodeCharacterReferences,characterReferenceValue,resolveCharacterText,profileOperations,item,itemSetTotals,inventoryWithItemSets,emptyProject,makeNode,ensureSceneCharacter,applyOperations,conditionValue,labelOperations,trace,present,timeline,storyLinks,storyRoute,storyScope,outlineLinkToken,outlineTextParts,outlineSections,displaySettings,diffCharacters,validateProject,execute,demoProject};
+  return {TYPES,DIALOGUE_MODES,ITEM_A,ITEM_B,ITEM_C,ART_CATEGORIES,ART_FILE_LIMIT,ART_PROJECT_LIMIT,INVENTORY_LIMIT,MAP_SIZE,MAP_ELEMENT_MIN,MAP_SHAPES,MAP_LAYERS,uid,clone,find,sceneOf,sceneMap,groupsOf,hasDialogue,dialogueSpeakers,defaultDialogueRule,dialogueRuleAt,dialogueLogText,parseDialogueLog,nextDialogueSpeaker,dateKey,dateText,nodeDateKey,character,characterDisplayName,attributeToken,nodeAttributeReferences,resolveAttributeText,characterToken,characterTextParts,literalTextPattern,textMatches,replaceTextRanges,previewNodeTextReplacements,nodeCharacterReferences,characterReferenceValue,resolveCharacterText,profileOperations,item,itemSetTotals,inventoryWithItemSets,emptyProject,makeNode,ensureSceneCharacter,applyOperations,conditionValue,labelOperations,trace,present,timeline,storyLinks,storyRoute,storyScope,outlineLinkToken,outlineTextParts,outlineSections,displaySettings,diffCharacters,deletionImpact,validateProject,execute,demoProject};
 });

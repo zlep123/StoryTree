@@ -1,7 +1,7 @@
 'use strict';
 
 function createSceneMapView({state,ST,$,esc,html,t,button,icon,currentScene,locationsInOrder,locationById,
-  locationName,locationOptions,defaultColor,run,render,toast,openLocation,openCharacter,openMapObject,focusMapArea,renderLocationCard,saveDisplaySettings}){
+  locationName,locationOptions,defaultColor,run,render,toast,openLocation,openCharacter,openMapObject,focusMapArea,renderLocationCard,locationCardActions,saveDisplaySettings}){
   const {width,height,minWidth,minHeight}=ST.MAP_SIZE;
   const canvasScale=3;
   const sessions=new Map();
@@ -329,6 +329,7 @@ function createSceneMapView({state,ST,$,esc,html,t,button,icon,currentScene,loca
         ${button('map-connect',t(view.routeFrom?'取消连线':'连接路线'),view.routeFrom?'small active':'small')}
         ${button('map-focus',t('在画布定位'),'small')}
         ${button('map-new-node',t('在此新建节点'),'small')}
+        <button type="button" class="small ghost" data-edit-location="${esc(area.locationId)}">编辑地点</button>
         ${button('map-remove',t('从地图移除'),'small ghost danger')}
       </div>
       ${view.routeFrom?html`<p class="inline-note">请选择地图上的另一个地点。</p>`:''}
@@ -348,7 +349,7 @@ function createSceneMapView({state,ST,$,esc,html,t,button,icon,currentScene,loca
   function renderMap(){
     const map=currentMap(),view=session(),places=available(map);
     view.selection=new Set(selectedEntries(map).map(entryKey));
-    if(!editable('locations'))view.routeFrom='';
+    if(!editable('locations')||(view.routeFrom&&!map.areas.some(area=>area.locationId===view.routeFrom)))view.routeFrom='';
     const arts=state.p.conceptArt||[];
     const image=arts.find(art=>art.id===map.backgroundArtId)?.image;
     return html`<section id="scene-map" class="scene-map">
@@ -356,6 +357,7 @@ function createSceneMapView({state,ST,$,esc,html,t,button,icon,currentScene,loca
         ${map.locationId?button('map-parent',t('↑ 上一级'),'small ghost'):''}
         <label for="scene-map-scope">地图范围</label>
         <select id="scene-map-scope" data-focus="scene-map-scope">${locationOptions(map.locationId,t('全场景'))}</select>
+        ${map.locationId?`<div class="location-card-controls">${locationCardActions(map.locationId)}</div>`:''}
         <label for="scene-map-background">底图</label>
         <select id="scene-map-background" data-focus="scene-map-background" ${editable('background')?'':'disabled'}>
           <option value="">无底图</option>

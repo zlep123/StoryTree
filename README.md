@@ -2,11 +2,16 @@
 
 StoryTree is a portable Windows editor for game scripts and branching narratives which was inspired by Arrow 3.1. Build a story on a node canvas, reuse characters and items across scenes, and preview how events and choices change a route.
 
-**[Download StoryTree 1.2.0 for Windows (x64)](https://github.com/zlep123/StoryTree/releases/download/v1.2.0/StoryTree-1.2.0-win-x64.zip)** · [Release notes and checksums](https://github.com/zlep123/StoryTree/releases/tag/v1.2.0) · [中文使用说明](docs/README.zh-CN.md)
+**[Download StoryTree 1.2.2 for Windows (x64)](https://github.com/zlep123/StoryTree/releases/download/v1.2.2/StoryTree-1.2.2-win-x64.zip)** · [1.2.2 release notes and checksum](https://github.com/zlep123/StoryTree/releases/tag/v1.2.2) · [中文使用说明](docs/README.zh-CN.md)
 
 [Two-minute hands-on tutorial, Chinese and English](https://github.com/zlep123/StoryTree/releases/download/v1.2.0/StoryTree-1.2.0-Tutorial-ZH-EN.mp4) · [Original 1.2.0 feature and plugin video](https://github.com/zlep123/StoryTree/releases/download/v1.2.0/StoryTree-1.2.0-Demo-ZH-EN.mp4)
 
 ![StoryTree's node canvas with the asset library on the left and branching Story Tree on the right](docs/canvas.png)
+
+## What's new in 1.2.2
+
+- Use the trash icon on a location card in the asset library or map sidebar to delete it from the project. The confirmation lists affected sublocations, storyline assignments, and map layouts. Use **Ctrl+Z** to undo.
+- When viewing sublocations, the current location also has edit and delete controls. **Remove from map** clears the placement on that map.
 
 ## What's new in 1.2.0
 
@@ -24,7 +29,15 @@ The [1.2.0 release notes](https://github.com/zlep123/StoryTree/releases/tag/v1.2
 4. Drag character and item cards from the asset library into a node. Click **Simulate** to choose a route and inspect how the characters and inventory change.
 5. Open **Story Tree** in the canvas toolbar. **Branches** shows parallel routes, **Story overview** reads the connected scenes in sequence, and the outline tab holds your plan. Use date and location filters to narrow the view. Click a card to locate its node on the canvas.
 
-Use **Settings** at the bottom left to switch between English and Simplified Chinese, adjust interface and node fonts, set the zoom level for the compact node overview, and check for updates. Hold **Space** and drag to pan, and scroll to zoom. The lower-right minimap shows the current viewport. **Fit Canvas** frames the whole scene. Double-click a scene tab or its library entry to rename it.
+Use **Settings** at the bottom left to switch between English and Simplified Chinese, adjust interface and node fonts, set the zoom level for the compact node overview, and check for updates. Hold **Space** and drag to pan, and scroll to zoom. The lower-right minimap shows the current viewport. **Fit Canvas** frames the whole scene. Click a scene card's name in the asset library or inspector to edit it. The card also has separate controls to open the canvas and map. Double-click a canvas tab to open scene settings.
+
+### Editing and deleting project content · 1.2.1
+
+Scene, character, item, location, group, item set, concept art, and outline editors have a **Delete** button. The confirmation lists affected content. Use **Undo** or **Ctrl+Z** to restore the deletion as one action.
+
+- Deleting a scene removes its nodes, internal connections, map layouts, and scene character snapshots. It clears jumps and rollback targets pointing into the scene. The project keeps at least one scene.
+- Deleting a location moves its children up one level, clears its assignment on nodes and outlines, and removes its map layout and related areas and routes. Deleting a group leaves its cards in the library.
+- Characters and items referenced by story data are protected. Item sets used by other sets and groups referenced by story changes are also protected. Text links in outlines remain readable and show when the target has been removed.
 
 ## What you can build
 
@@ -109,6 +122,8 @@ npm test
 npm start
 ```
 
-Run `npm run build` to produce the portable app under `dist/StoryTree-1.2.0-win-x64`. A custom output directory can be supplied with `npm run build -- <directory>`. The build includes the desktop executable, MCP launcher, script and Excel examples, sample plugins, and runtime notices. The GitHub Release ZIP contains the runnable app, while GitHub's generated source archives contain the tagged repository.
+Run `npm run build` to produce the portable app under `dist/StoryTree-1.2.2-win-x64`. A custom output directory can be supplied with `npm run build -- <directory>`. The build includes the desktop executable, MCP launcher, script and Excel examples, sample plugins, and runtime notices. The GitHub Release ZIP contains the runnable app, while GitHub's generated source archives contain the tagged repository.
+
+When adding a new editable project asset, verify creation, reopening from its normal list, editing and reopening after a restart, and deletion with undo and redo. Decide which dependent data to remove, detach, or protect in the project command layer. The deletion preview and the command should use the same dependency check so both the desktop and local MCP preserve project integrity.
 
 StoryTree was inspired by Arrow's node-canvas workflow. Electron and Chromium notices ship in the Windows package.

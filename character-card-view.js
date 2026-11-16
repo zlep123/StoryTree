@@ -1,6 +1,6 @@
 'use strict';
 
-function createCharacterCardView({state,ST,t,esc,html,staticHtml,button,icon,showModal,avatar,charName,itemName,itemSetName,entityChip,renderCharacterReferenceTray,renderCharacterItemSets}){
+function createCharacterCardView({state,ST,t,esc,html,staticHtml,button,icon,showModal,deleteEntryButton,avatar,charName,itemName,itemSetName,entityChip,renderCharacterReferenceTray,renderCharacterItemSets}){
   const characterImportLabels={
     name:'角色ID',displayName:'角色名称',summary:'简介',details:'详情',tags:'标签',groupId:'角色分组',
     skills:'技能',attributes:'属性',inventory:'物品',itemSet:'物品组合'
@@ -129,7 +129,7 @@ function createCharacterCardView({state,ST,t,esc,html,staticHtml,button,icon,sho
       <div id="character-import-panel">${renderCharacterImport(modal)}</div>
       <div class="modal-grid"><div>${characterProfile(modal,state.p)}${characterInventory(modal,state.p.items)}</div>
       <div>${characterScores(modal)}</div></div>`,
-      (mode==='library'&&id?button('open-current',t('编辑场景当前状态'),'left ghost small'):'')+
+      (mode==='library'&&id?deleteEntryButton('character')+button('open-current',t('编辑场景当前状态'),'ghost small'):'')+
       button('modal-close',t('取消'))+button('character-save',t(mode==='pending'?'保存待变化':'保存角色卡'),'primary'),'wide');
   }
 

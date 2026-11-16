@@ -253,7 +253,12 @@ async function refresh(force=false){
    const result=await api(force||!state.p?'project':'project?revision='+state.p.revision);
    if(!result||!force&&(draggingCard||sceneMapView.dragging()))return;
    state.lastDirectory=result.directory;
-   if(!state.p||result.project.revision>state.p.revision||force){state.p=result.project;render();}
+   if(!state.p||result.project.revision>state.p.revision||force){
+     const previous=state.p?.currentSceneId;
+     state.p=result.project;
+     resetSceneView(previous);
+     render();
+   }
  }catch(error){toast(t('本地服务连接失败：')+error.message);}
 }
 function updateSave(){
@@ -347,7 +352,7 @@ function renderInspectorPanel() {
     <div class="inspector-content" data-editor-node="${esc(selectedNode()?.id||'')}">${renderInspector()}</div>
   </aside>`;
 }
-function renderLibraryCard(c,i,kind,inLibrary=true){return `<div class="library-card ${state.focusedEntity===c.id?'search-located':''}" draggable="true" data-drag-kind="${kind}" data-drag-id="${esc(c.id)}" data-entity-kind="${kind}" data-entity-id="${esc(c.id)}" data-summary="${esc(c.summary)}" title="${esc(c.summary||t('双击编辑'))}" ${inLibrary?'data-library="true"':''}>${kind==='character'?avatar(c,i):`<span class="avatar item">${icon('items',19)}</span>`}<div class="flex"><div class="name">${esc(c.name)}</div><div class="desc">${esc(kind==='item'?t(c.category)+' · '+(t(c.type)||t('未分类')):(c.tags.slice(0,2).join(' · ')||c.summary||t('拖入节点开始使用')))}</div></div><span class="card-drag">⠿</span></div>`;}
+function renderLibraryCard(c,i,kind,inLibrary=true){return `<div class="library-card ${state.focusedEntity===c.id?'search-located':''}" draggable="true" data-drag-kind="${kind}" data-drag-id="${esc(c.id)}" data-entity-kind="${kind}" data-entity-id="${esc(c.id)}" data-summary="${esc(c.summary)}" title="${esc(c.summary||t('双击编辑'))}" ${inLibrary?'data-library="true"':''}>${kind==='character'?avatar(c,i):`<span class="avatar item">${icon('items',19)}</span>`}<div class="flex"><div class="name">${esc(c.name)}</div><div class="desc">${esc(kind==='item'?t(c.category)+' · '+(t(c.type)||t('未分类')):(c.tags.slice(0,2).join(' · ')||c.summary||t('拖入节点开始使用')))}</div></div><button type="button" class="small ghost library-card-edit" data-edit-asset title="${esc(t('编辑'))}">${t('编辑')}</button></div>`;}
 function renderGroupedCards(kind,q='',inLibrary=true){
    const p=state.p,cards=p[kind==='item'?'items':'characters'];
    let content='';
@@ -359,7 +364,7 @@ function renderGroupedCards(kind,q='',inLibrary=true){
      ].join(' ').toLowerCase().includes(q));
      if(q && !shown.length)continue;
      if(!group.id && !members.length && !cards.length)continue;
-     const groupButton=group.id?`<button class="small ghost" data-group="${esc(group.id)}" title="${esc(t('批量操作'))}">${icon('more',12)}</button>`:'';
+     const groupButton=group.id?`<button class="small ghost" data-group="${esc(group.id)}" title="${esc(t('编辑分组'))}" aria-label="${esc(t('编辑分组'))}">${icon('more',12)}</button>`:'';
      const drag=group.id?`draggable="true" data-drag-kind="${kind==='item'?'item-group':'group'}" data-drag-id="${esc(group.id)}"`:'';
      const drop=kind==='item'?`data-item-group-drop="${esc(group.id)}"`:'';
      content+=`<div class="group-head" ${drag} ${drop}><span>${esc(group.name)} <span class="muted tiny">${shown.length}</span></span>${groupButton}</div>${shown.map((c,i)=>renderLibraryCard(c,i,kind,inLibrary)).join('')}`;
@@ -375,7 +380,14 @@ function renderLibraryList(){
  if(state.tab==='items')return renderItemSetLibrary(q)+renderGroupedCards('item',q);
  if(state.tab==='characters')return renderGroupedCards('character',q);
  let content='';
- if(state.tab==='scenes')content=p.scenes.filter(s=>!q||s.name.toLowerCase().includes(q)).map(s=>html`<div class="library-card" draggable="true" data-drag-kind="scene" data-drag-id="${esc(s.id)}" data-scene="${esc(s.id)}" data-rename-scene="${esc(s.id)}" data-drop-scene="${esc(s.id)}" title="双击修改场景名称"><span class="avatar alt">${icon('scenes',18)}</span><div class="flex"><div class="name">${esc(s.name)}</div><div class="desc">${p.nodes.filter(n=>n.sceneId===s.id).length} 节点 · ${Object.keys(s.characters).length} 场景角色</div></div><button type="button" class="small ghost" data-open-scene-map="${esc(s.id)}" title="场景地图" aria-label="场景地图">${icon('map',14)}</button></div>`).join('');
+ if(state.tab==='scenes')content=p.scenes.filter(s=>!q||s.name.toLowerCase().includes(q)).map(s=>html`
+   <div class="library-card scene-library-card" draggable="true" data-drag-kind="scene" data-drag-id="${esc(s.id)}" data-edit-scene="${esc(s.id)}" data-drop-scene="${esc(s.id)}">
+     <span class="avatar alt">${icon('scenes',18)}</span>
+     <div class="flex"><button type="button" class="scene-card-name" data-edit-scene="${esc(s.id)}" title="编辑场景">${esc(s.name)}</button>
+     <div class="desc">${p.nodes.filter(n=>n.sceneId===s.id).length} ${t('节点')} · ${Object.keys(s.characters).length} ${t('场景角色')}</div></div>
+     <button type="button" class="icon small ghost" data-scene="${esc(s.id)}" title="打开场景" aria-label="打开场景">${icon('tree',14)}</button>
+     <button type="button" class="icon small ghost" data-open-scene-map="${esc(s.id)}" title="场景地图" aria-label="场景地图">${icon('map',14)}</button>
+   </div>`).join('');
  return content||`<div class="hint">${q?t('没有匹配的素材。'):t('这里还没有素材，点击右上角 ＋ 创建。')}</div>`;
 }
 function renderLibrary() {
@@ -410,6 +422,11 @@ function renderItemSetLibrary(query){
     </button>`).join('')||html`<p class="hint">保存可重复添加到角色的定量物品组合。</p>`}
   </section>`;
 }
+function locationCardActions(id){
+ const key=esc(id),edit=esc(t('编辑地点')),remove=esc(t('删除地点'));
+ return `<button type="button" class="small ghost" data-edit-location="${key}" title="${edit}" aria-label="${edit}">${icon('settings',13)}</button>
+   <button type="button" class="small ghost danger" data-delete-location="${key}" title="${remove}" aria-label="${remove}">${icon('trash',13)}</button>`;
+}
 function renderLocationCard({location,name},attributes,detail,controls){
  const title=[name,t('双击查看子地点'),location.notes].filter(Boolean).join('\n');
  return `<div class="library-card location-card ${state.focusedEntity===location.id?'search-located':''}"
@@ -418,7 +435,7 @@ function renderLocationCard({location,name},attributes,detail,controls){
    <span class="avatar alt">${icon('map',16)}</span><div class="flex">
      <div class="name">${esc(location.name)}</div>
      <div class="desc">${esc(detail)}</div>
-   </div><div class="location-card-controls">${controls}<span class="card-drag" aria-hidden="true">⠿</span></div>
+   </div><div class="location-card-controls">${controls}${locationCardActions(location.id)}</div>
  </div>`;
 }
 function renderLocationLibrary(query){
@@ -431,9 +448,7 @@ function renderLocationLibrary(query){
  const cards=matches.map(entry=>{
    const id=esc(entry.location.id);
    const controls=`<button type="button" class="small ghost" data-location-library-scope="${id}"
-       title="${esc(t('查看子地点'))}" aria-label="${esc(t('查看子地点'))}">${icon('chevron',13)}</button>
-     <button type="button" class="small ghost" data-edit-library-location="${id}"
-       title="${esc(t('编辑地点'))}" aria-label="${esc(t('编辑地点'))}">${icon('settings',13)}</button>`;
+       title="${esc(t('查看子地点'))}" aria-label="${esc(t('查看子地点'))}">${icon('chevron',13)}</button>`;
    return renderLocationCard(entry,`data-library-location="${id}"`,
      query?entry.name:message`${counts.get(entry.location.id)||0} 个节点`,controls);
  }).join('');
@@ -441,6 +456,7 @@ function renderLocationLibrary(query){
  return html`<div class="location-library-path">
    ${scope?`<button type="button" class="small ghost" data-location-library-scope="${esc(parent)}">${t('↑ 上一级')}</button>`:''}
    <span title="${esc(locationName(scope)||t('所有地点'))}">${esc(query?t('搜索全部地点'):locationName(scope)||t('所有地点'))}</span>
+   ${scope&&!query?`<div class="location-card-controls">${locationCardActions(scope)}</div>`:''}
  </div>${cards||`<p class="hint">${t(query?'没有匹配的素材。':scope?'这里还没有子地点。':'点击右上角 ＋ 创建地点。')}</p>`}`;
 }
 function openLocationLibraryScope(id){
@@ -471,8 +487,8 @@ function openLocation(id,parentId=''){
    <textarea id="location-notes" rows="4">
 ${esc(location?.notes||'')}</textarea>
    <p class="hint">可把地点卡拖到画布节点上；框选多个节点后，也可以一次指定地点。</p>`,
-   (location?button('location-new-child',t('新建子地点'),'ghost left')+button('location-map',t('查看地点地图'),'ghost'):'')+
-   button('modal-close',t('取消'))+button('location-save',t('保存'),'primary'),'narrow');
+   (location?deleteEntryButton('location')+button('location-new-child',t('新建子地点'),'ghost')+button('location-map',t('查看地点地图'),'ghost'):'')+
+   button('modal-close',t('取消'))+button('location-save',t('保存'),'primary'),'narrow location-editor');
 }
 document.addEventListener('dblclick',event=>{
  const card=event.target.closest('[data-library-location]');
@@ -524,7 +540,7 @@ function openArt(id){
    <div><label for="art-category">分类</label><select id="art-category">${ST.ART_CATEGORIES.map(key=>`<option value="${key}" ${key===art.category?'selected':''}>${t(artLabels[key])}</option>`).join('')}</select></div></div>
    <label for="art-notes">备注</label><textarea id="art-notes" rows="3">
 ${esc(art.notes)}</textarea>`,
-   button('art-delete',t('移除图片'),'danger ghost left')+button('modal-close',t('关闭'))+button('art-save',t('保存'),'primary'),'wide');
+   deleteEntryButton('art')+button('modal-close',t('关闭'))+button('art-save',t('保存'),'primary'),'wide');
 }
 function readArtImage(file){
  return new Promise((resolve,reject)=>{
@@ -1366,7 +1382,13 @@ function renderInspector(){const n=selectedNode(),p=state.p;
    const kind=state.inspectorTab==='items'?'item':'character';
    return html`<div class="row between">${button(kind==='item'?'new-item-direct':'new-character-direct',t('＋ 创建'),'small')}</div><div class="hint">双击卡片编辑；可从这里拖入画布节点或正文。</div>${renderGroupedCards(kind,'',false)}`;
  }
- if(state.inspectorTab==='scene')return `<div class="stack">${p.scenes.map(s=>html`<div class="tool-card" data-drop-scene="${esc(s.id)}"><h3 data-rename-scene="${esc(s.id)}" title="${esc(t('双击修改场景名称'))}">${esc(s.name)}</h3><p>${esc(s.summary)}<br>${p.nodes.filter(n=>n.sceneId===s.id).length} 节点 · ${Object.keys(s.characters).length} 角色</p><button class="small ghost" data-scene="${esc(s.id)}">打开场景 →</button> <button class="small ghost" data-open-scene-map="${esc(s.id)}">场景地图</button></div>`).join('')}</div>${button('new-scene',t('＋ 新建场景'),'small full')}${button('scene-info',t('编辑当前场景'),'small ghost full')}`;
+ if(state.inspectorTab==='scene')return `<div class="stack">${p.scenes.map(s=>html`
+   <div class="tool-card" data-drop-scene="${esc(s.id)}">
+     <h3><button type="button" class="scene-card-name" data-edit-scene="${esc(s.id)}" title="编辑场景">${esc(s.name)}</button></h3>
+     <p>${esc(s.summary)}<br>${p.nodes.filter(n=>n.sceneId===s.id).length} ${t('节点')} · ${Object.keys(s.characters).length} ${t('场景角色')}</p>
+     <button type="button" class="small ghost" data-scene="${esc(s.id)}">打开场景</button>
+     <button type="button" class="small ghost" data-open-scene-map="${esc(s.id)}">场景地图</button>
+   </div>`).join('')}</div>${button('new-scene',t('＋ 新建场景'),'small full')}${button('scene-info',t('编辑当前场景'),'small ghost full')}`;
  if(!n){const s=currentScene();return html`<div class="scene-intro"><h2>${esc(s.name)}</h2><p>${esc(s.summary||t('为这个场景写一段简介，让每个节点有迹可循。'))}</p></div><div class="stat-grid"><div class="stat"><strong>${p.nodes.filter(n=>n.sceneId===s.id).length.toString().padStart(2,'0')}</strong><span>剧情节点</span></div><div class="stat"><strong>${Object.keys(s.characters).length.toString().padStart(2,'0')}</strong><span>场景角色</span></div></div><div class="section-title">六种节点，一条故事脉络</div><div class="node-palette">${Object.entries(ST.TYPES).map(([type,name])=>`<button class="palette-item" data-create-type="${type}">${icon(type,15)}${t(name)}</button>`).join('')}</div><div class="section-title">当前场景角色 ${button('scene-characters',t('查看状态'),'small ghost')}</div><div class="peek-chars">${Object.keys(s.characters).map(id=>entityChip({kind:'character',id},'data-current="true"')).join('')||staticHtml('<span class="hint">拖入角色，建立此场景的独立角色快照</span>')}</div><div class="tool-card" style="margin-top:23px"><h3>${icon('event',12)} 让变化沿剧情发生</h3><p>事件记录待变化，条件决定是否发生。打开故事树，查看每一刻的角色状态。</p></div><div class="tool-card"><h3>${icon('mcp',12)} 和 AI 一起梳理故事</h3><p>本地 MCP 可读取、建立和修改剧情，编辑会同步显示在画布中。</p>${button('mcp',t('查看连接方式 →'),'ghost small')}</div>`;}
  const bind=(path,value,type='input',extra='')=>{
    const key=esc(`node-${n.id}-${path}`);
@@ -1524,7 +1546,7 @@ function openOutlineEditor(id){
         <div id="outline-assets" class="outline-asset-list"></div>
       </div>
     </div>`,
-    (entry?button('outline-delete',t('移除大纲'),'danger ghost left'):'')+
+    (entry?deleteEntryButton('outline'):'')+
     button('text-find',t('查找'),'ghost')+button('text-replace',t('替换'),'ghost',t('查找替换 · Ctrl+H'))+
     button('modal-close',t('取消'))+button('outline-save',t('保存大纲'),'primary'),'wide');
   syncOutlineSectionControls();
@@ -2277,15 +2299,26 @@ document.addEventListener('pointerdown',e=>{
  }
 });
 document.addEventListener('click',async e=>{try{
+ if(e.target.closest('#entity-deletion'))return;
+ const deleteLocation=e.target.closest('[data-delete-location]');
+ if(deleteLocation){await confirmEntryDeletion('location',deleteLocation.dataset.deleteLocation);return;}
+ const editLocation=e.target.closest('[data-edit-location]');
+ if(editLocation){openLocation(editLocation.dataset.editLocation);return;}
  if(e.target.closest('[data-map-add-place],[data-map-open-place],[data-map-place],[data-map-area],[data-map-element],[data-map-remove-route]')){
    await sceneMapView.handleClick(e);return;
  }
  const libraryScope=e.target.closest('[data-location-library-scope]');
  if(libraryScope){openLocationLibraryScope(libraryScope.dataset.locationLibraryScope);return;}
- const editLocation=e.target.closest('[data-edit-library-location]');
- if(editLocation){openLocation(editLocation.dataset.editLibraryLocation);return;}
  const mapEntry=e.target.closest('[data-open-scene-map]');
  if(mapEntry){await openSceneMap(mapEntry.dataset.openSceneMap);return;}
+ const editScene=e.target.closest('[data-edit-scene]');
+ if(editScene&&!e.target.closest('[data-scene]')){openSceneInfo(editScene.dataset.editScene);return;}
+ const editAsset=e.target.closest('[data-edit-asset]')?.closest('[data-entity-id]');
+ if(editAsset){
+   if(editAsset.dataset.entityKind==='character')openCharacter(editAsset.dataset.entityId);
+   else openItem(editAsset.dataset.entityId);
+   return;
+ }
  const outlineSource=e.target.closest('[data-outline-source]');
  if(outlineSource){insertOutlineLink(outlineSource.dataset.outlineSource);return;}
  const outlineLink=e.target.closest('[data-outline-link-token]');
@@ -2511,6 +2544,7 @@ document.addEventListener('focusin',event=>{
   }
 });
 document.addEventListener('dblclick',e=>{
+ if(e.target.closest('[data-edit-asset]'))return;
  const scene=e.target.closest('[data-rename-scene]');
  if(scene){lastSceneClick=null;openSceneInfo(scene.dataset.renameScene,true);return;}
  const entity=e.target.closest('[data-entity-id]');
@@ -2521,6 +2555,7 @@ document.addEventListener('dblclick',e=>{
  catch(err){toast(err.message);}
 });
 document.addEventListener('keydown',async e=>{try{
+ if(e.target.closest('#entity-deletion'))return;
  if(e.target.closest('.variable-details'))return;
  if(e.isComposing||e.keyCode===229||e.target===composingInput)return;
  if(state.modal?.kind==='dialogue-edit'&&e.key==='Enter'){
@@ -2640,7 +2675,16 @@ function normalizeItemFilterTag(tag) {
   if (!canonical || !match) return canonical || tag;
   return (labels===ST.ITEM_B?'类型:':'品级:')+canonical;
 }
-async function history(action){if(!await flushDrafts())return;const r=await api('history',{action,revision:state.p.revision});state.p=r.project;state.selected=new Set([...state.selected].filter(id=>nodeById(id)));render();toast(action==='undo'?t('已撤销'):t('已重做'));}
+async function history(action){
+ if(!await flushDrafts())return;
+ const previous=state.p.currentSceneId;
+ const result=await api('history',{action,revision:state.p.revision});
+ state.p=result.project;
+ resetSceneView(previous);
+ state.selected=new Set([...state.selected].filter(id=>nodeById(id)));
+ render();
+ toast(action==='undo'?t('已撤销'):t('已重做'));
+}
 function dialogueEditor(id){return $$('.dialogue-editor').find(el=>el.dataset.dialogueNode===id);}
 function focusDialogueLine(id,index){focusNodeEditor(dialogueEditor(id)?.querySelector(`[data-line-index="${index}"]`));}
 function lockDialogue(id,locked){
@@ -2714,6 +2758,14 @@ async function switchScene(id) {
   state.selected.clear();
   state.view = ST.clone(currentScene().view);
   render();
+}
+function resetSceneView(previousId){
+ if(state.p.currentSceneId===previousId)return;
+ state.selected.clear();
+ state.view=ST.clone(currentScene().view);
+ state.link=null;
+ state.rolePicker=null;
+ state.mapOpen=false;
 }
 async function focusNode(id) {
   const node = nodeById(id);
@@ -2967,6 +3019,73 @@ async function init(){try{state.connection=window.desktop?await desktop.getConne
 
 function showModal(title,body,footer='',size=''){const root=$('#modal-root'),scroll=$('.modal-body')?.scrollTop||0,f=focusCapture();root.innerHTML=`<div class="modal-backdrop"><section class="modal ${size}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header class="modal-header"><div><h2>${esc(title)}</h2></div>${button('modal-close',icon('close',17),'icon ghost',t('关闭窗口'))}</header><div class="modal-body">${body}</div><footer class="modal-footer">${footer||button('modal-close',t('关闭'))}</footer></section></div>`;$('.modal-body').scrollTop=scroll;focusRestore(f);textFind.sync();}
 function closeModal(){state.modal?.abort?.abort();state.modal=null;$('#modal-root').innerHTML='';document.body.classList.remove('character-reference-drag');textFind.sync();updateSave();}
+const deleteEntryButton=kind=>`<button type="button" class="danger ghost left" data-action="delete-entry" data-delete-kind="${esc(kind)}">${esc(t('删除'))}</button>`;
+const deletionEffectLabels={
+ sceneNodes:'删除场景节点',sceneEdges:'删除场景连线',externalNodes:'解除其他场景的跳转或回溯引用',
+ sceneCharacters:'删除场景角色快照',maps:'删除地图布局',mapMarkers:'移除地图角色标记',
+ children:'将子地点移至上一级',mapAreas:'移除地图上的地点区域',mapRoutes:'移除相关地图路线',
+ nodes:'涉及的节点',scenes:'涉及的场景',characterCards:'涉及的角色卡',itemSets:'涉及的物品组合',
+ outlines:'解除大纲的地点指定',members:'取消卡片的分组归属',mapBackgrounds:'清除地图底图',mapImages:'移除地图图片物体'
+};
+async function confirmEntryDeletion(kind,id){
+ const modal=state.modal;
+ if($('#entity-deletion')||!await flushDrafts()||state.modal!==modal||$('#entity-deletion'))return;
+ const {name,effects,blocked}=ST.deletionImpact(state.p,kind,id);
+ const parentId=kind==='location'?(locationById(id)?.parentId||''):'';
+ const revision=state.p.revision,projectId=state.p.id,sceneId=state.p.currentSceneId;
+ const dialog=document.createElement('dialog');
+ dialog.id='entity-deletion';
+ dialog.className='entry-delete-dialog';
+ dialog.setAttribute('aria-labelledby','entry-delete-title');
+ dialog.innerHTML=html`
+   <header class="modal-header"><h2 id="entry-delete-title">${t(blocked?'无法删除':'确认删除')}</h2></header>
+   <div class="modal-body">
+     <p class="entry-delete-name">${esc(name)}</p>
+     <ul class="entry-delete-effects">${Object.entries(effects).filter(([,count])=>count>0).map(([effect,count])=>
+       `<li><span>${esc(t(deletionEffectLabels[effect]))}</span><strong>${count}</strong></li>`).join('')}</ul>
+     <p class="${blocked?'warning':'hint'}">${esc(t(blocked||'保存后可用 Ctrl+Z 撤销。'))}</p>
+     <p class="error" role="alert" data-delete-error hidden></p>
+   </div>
+   <footer class="modal-footer">
+     <button type="button" data-delete-cancel autofocus>${t(blocked?'关闭':'取消')}</button>
+     ${blocked?'':`<button type="button" class="danger" data-delete-confirm>${t('确认删除')}</button>`}
+   </footer>`;
+ const cancel=dialog.querySelector('[data-delete-cancel]');
+ const confirm=dialog.querySelector('[data-delete-confirm]');
+ const dismiss=()=>{dialog.close();dialog.remove();};
+ dialog.addEventListener('cancel',event=>{
+   event.preventDefault();
+   if(!cancel.disabled)dismiss();
+ });
+ cancel.addEventListener('click',dismiss);
+ confirm?.addEventListener('click',async()=>{
+   const error=dialog.querySelector('[data-delete-error]');
+   error.hidden=true;
+   cancel.disabled=confirm.disabled=true;
+   try{
+     await run(()=>{
+       if(projectId!==state.p.id||revision!==state.p.revision)throw Error(t('项目已更改，请取消后重新查看删除影响。'));
+       return [{type:kind+'.delete',args:{id}}];
+     },t('已删除，可用 Ctrl+Z 撤销'),()=>{
+       resetSceneView(sceneId);
+       if(kind==='location'&&state.locationLibraryScope===id)state.locationLibraryScope=parentId;
+       render();
+     });
+     dismiss();
+     closeModal();
+   }catch(failure){
+     if(modal)delete modal.failedSave;
+     updateSave();
+     error.textContent=revision===state.p.revision?localizeError(failure.message):t('项目已更改，请取消后重新查看删除影响。');
+     error.hidden=false;
+     if(projectId===state.p.id&&revision===state.p.revision)confirm.disabled=false;
+     cancel.disabled=false;
+     cancel.focus();
+   }
+ });
+ $('#modal-root').append(dialog);
+ dialog.showModal();
+}
 function openSimple(kind,title,label,value){state.modal={kind};showModal(title,`<label>${esc(label)}</label><input id="simple-value" value="${esc(value)}" data-focus="simple" autofocus>`,(kind==='rename-project'?button('new-project',t('新建空白故事'),'left ghost'):'')+button('modal-close',t('取消'))+button('simple-save',t('保存'),'primary'),'narrow');setTimeout(()=>$('#simple-value')?.focus(),0);}
 function nodeRoute(n){const q={...state.p,currentSceneId:n.sceneId};let trace=ST.trace(q),h=trace.history.find(h=>h.nodeId===n.id);if(h)return {trace,h,defaultRoute:true};
  const nodes=state.p.nodes.filter(x=>x.sceneId===n.sceneId),roots=nodes.filter(x=>!state.p.edges.some(e=>e.to===x.id));const todo=roots.map(x=>({id:x.id,path:[],seen:[]}));let route;
@@ -3107,7 +3226,7 @@ function renderItemSetEditor(){
       ${button('item-set-add-entry',t('添加'),'small')}
     </div>
     <div class="item-set-tray peek-chars">${items.map(item=>entityChip({kind:'item',id:item.id})).join('')}${sets.map(itemSetChip).join('')}</div>`,
-    (modal.id?button('item-set-delete',t('移除组合'),'danger ghost left'):'')+
+    (modal.id?deleteEntryButton('itemSet'):'')+
     button('modal-close',t('取消'))+button('item-set-save',t('保存组合'),'primary'),'narrow');
 }
 function captureItemSet(){
@@ -3140,7 +3259,7 @@ function addCharacterItemSet(id){
   renderCharacterModal();
 }
 function captureItem(){const m=state.modal;if(m?.kind!=='item')return;for(const el of $$('[data-item-field]'))m.draft[el.dataset.itemField]=el.value;m.draft.tags=splitTags($('#item-tags')?.value||'');for(const el of $$('[data-item-attribute]'))m.draft.attributes[el.dataset.itemAttribute]=Number(el.value);}
-function renderItemModal(){const m=state.modal,i=m.draft;showModal(m.id?t('编辑物品卡'):t('创建物品卡'),html`<div class="modal-grid"><div><label style="margin-top:0">物品名称</label><input data-item-field="name" data-focus="item-name" value="${esc(i.name)}"><label>简介</label><textarea data-item-field="summary" data-focus="item-summary" rows="2">${esc(i.summary)}</textarea><label>详情</label><textarea data-item-field="details" data-focus="item-details" rows="5">${esc(i.details)}</textarea><label>物品分组</label><select data-item-field="groupId" data-focus="item-group"><option value="">未分组</option>${ST.groupsOf(state.p,'item').map(g=>`<option value="${esc(g.id)}" ${g.id===i.groupId?'selected':''}>${esc(g.name)}</option>`).join('')}</select><label>自定义标签 · 逗号分隔</label><input id="item-tags" value="${esc(i.tags.join(', '))}" data-focus="item-tags"></div><div><label style="margin-top:0">A 组 · 必选一个</label><select data-item-field="category" data-focus="item-category">${options(ST.ITEM_A,i.category)}</select><label>B 组 · 可选一个</label><select data-item-field="type" data-focus="item-type">${options(['',...ST.ITEM_B],i.type)}</select><label>C 组 · 品级，需先选择 B 组</label><select data-item-field="grade" ${i.type?'':'disabled'} data-focus="item-grade">${options(['',...ST.ITEM_C],i.grade)}</select><div class="section-title">物品属性 <span class="tiny muted">0–100</span></div>${i.category==='特殊物品'?staticHtml('<div class="inline-note">特殊物品没有属性栏。</div>'):html`${Object.entries(i.attributes).map(([k,v])=>`<div class="row" style="margin:8px 0"><span class="flex smalltext">${esc(k)}</span><input class="number-inline" type="number" min="0" max="100" data-item-attribute="${esc(k)}" data-focus="item-attr-${esc(k)}" value="${v}"><button class="small ghost" data-item-remove-attr="${esc(k)}">×</button></div>`).join('')}<div class="row"><input id="new-item-attr" placeholder="新属性名称">${button('item-add-attr',t('添加'),'small')}</div>`}<div class="hint">同组标签互斥。物品进入角色物品栏后可堆叠，双击数量编辑。</div></div></div>`,button('modal-close',t('取消'))+button('item-save',t('保存物品卡'),'primary'),'');}
+function renderItemModal(){const m=state.modal,i=m.draft;showModal(m.id?t('编辑物品卡'):t('创建物品卡'),html`<div class="modal-grid"><div><label style="margin-top:0">物品名称</label><input data-item-field="name" data-focus="item-name" value="${esc(i.name)}"><label>简介</label><textarea data-item-field="summary" data-focus="item-summary" rows="2">${esc(i.summary)}</textarea><label>详情</label><textarea data-item-field="details" data-focus="item-details" rows="5">${esc(i.details)}</textarea><label>物品分组</label><select data-item-field="groupId" data-focus="item-group"><option value="">未分组</option>${ST.groupsOf(state.p,'item').map(g=>`<option value="${esc(g.id)}" ${g.id===i.groupId?'selected':''}>${esc(g.name)}</option>`).join('')}</select><label>自定义标签 · 逗号分隔</label><input id="item-tags" value="${esc(i.tags.join(', '))}" data-focus="item-tags"></div><div><label style="margin-top:0">A 组 · 必选一个</label><select data-item-field="category" data-focus="item-category">${options(ST.ITEM_A,i.category)}</select><label>B 组 · 可选一个</label><select data-item-field="type" data-focus="item-type">${options(['',...ST.ITEM_B],i.type)}</select><label>C 组 · 品级，需先选择 B 组</label><select data-item-field="grade" ${i.type?'':'disabled'} data-focus="item-grade">${options(['',...ST.ITEM_C],i.grade)}</select><div class="section-title">物品属性 <span class="tiny muted">0–100</span></div>${i.category==='特殊物品'?staticHtml('<div class="inline-note">特殊物品没有属性栏。</div>'):html`${Object.entries(i.attributes).map(([k,v])=>`<div class="row" style="margin:8px 0"><span class="flex smalltext">${esc(k)}</span><input class="number-inline" type="number" min="0" max="100" data-item-attribute="${esc(k)}" data-focus="item-attr-${esc(k)}" value="${v}"><button class="small ghost" data-item-remove-attr="${esc(k)}">×</button></div>`).join('')}<div class="row"><input id="new-item-attr" placeholder="新属性名称">${button('item-add-attr',t('添加'),'small')}</div>`}<div class="hint">同组标签互斥。物品进入角色物品栏后可堆叠，双击数量编辑。</div></div></div>`,(m.id?deleteEntryButton('item'):'')+button('modal-close',t('取消'))+button('item-save',t('保存物品卡'),'primary'),'');}
 function openOperation(nodeId){
  const n=nodeById(nodeId),ids=Object.keys(ST.sceneOf(state.p,n.sceneId).characters);
  const characterId=n.refs.find(ref=>ref.kind==='character')?.id||ids[0]||'';
@@ -3209,7 +3328,7 @@ function openSceneInfo(id=state.p.currentSceneId,rename=false){
    <label for="scene-name">场景名称</label><input id="scene-name" value="${esc(scene.name)}">
    <label for="scene-summary">场景简介</label><textarea id="scene-summary" rows="5">
 ${esc(scene.summary)}</textarea>`,
- button('modal-close',t('取消'))+button('scene-save',t('保存场景'),'primary'),'narrow');
+ deleteEntryButton('scene')+button('modal-close',t('取消'))+button('scene-save',t('保存场景'),'primary'),'narrow');
  $('#scene-name').focus();
  if(rename)$('#scene-name').select();
 }
@@ -3221,11 +3340,35 @@ function openItemGroup(group){
    <label>组内物品</label><div class="group-members">${members.map(item=>entityChip({kind:'item',id:item.id})).join('')||t('将物品卡拖到分组标题，或在物品卡中选择分组。')}</div>
    <label for="group-tags">批量添加标签 · 逗号分隔</label><input id="group-tags">
    <p class="hint">可以拖动分组标题，把整组物品加入节点。</p>`,
-   button('modal-close',t('取消'))+button('item-group-save',t('保存分组'),'primary'),'narrow');
+   deleteEntryButton('group')+button('modal-close',t('取消'))+button('item-group-save',t('保存分组'),'primary'),'narrow');
 }
 function openTransfer(copy){state.modal={kind:'transfer',copy,ids:[...state.selected]};showModal(copy?t('复制节点到场景'):t('移动节点到场景'),html`<div class="inline-note">将${copy?t('复制'):t('移动')} ${state.selected.size} 个节点，保留选中节点之间的连线。${copy?'':t('与未选中节点的连线将断开。')}角色将复制为目标场景中的独立快照。</div><label>目标场景</label><select id="transfer-scene"><option value="new">＋ 新建一个场景</option>${state.p.scenes.filter(s=>s.id!==state.p.currentSceneId).map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select><label>新场景名称（选择新建时使用）</label><input id="transfer-scene-name" value="新场景">`,button('modal-close',t('取消'))+button('transfer-save',copy?t('复制'):t('移动'),'primary'),'narrow');}
 function openSceneCharacters(){const s=currentScene(),r=ST.present(state.p,s.id);state.modal={kind:'scene-characters'};showModal(t('场景角色 · 当前状态'),html`<div class="inline-note">显示默认路径推演完毕、再叠加检查器即时编辑后的状态。${r.status==='choice'?t('当前存在未选分支，状态停在分叉处。'):''}</div>${r.error?`<p class="error">${esc(localizeError(r.error))}</p>`:''}<div class="stack">${Object.values(r.characters).map(c=>html`<div class="tool-card"><div class="row">${avatar(c)}<div class="flex"><h3>${esc(c.name)}</h3><p>${esc(Object.entries(c.attributes).map(([k,v])=>k+' '+v).join(' · '))}</p></div><button class="small" data-open-current="${esc(c.id)}">即时编辑</button></div><p style="margin-top:9px">${Object.entries(c.inventory).filter(([,q])=>q>0).map(([id,q])=>esc(itemName(id))+' × '+q).join(' · ')||t('暂无物品')}</p></div>`).join('')||staticHtml('<div class="hint">将角色拖进场景或节点即可创建独立快照。</div>')}</div>`,button('modal-close',t('关闭')),'');}
-function openGroup(id){const g=state.p.groups.find(g=>g.id===id);if(g.kind==='item'){openItemGroup(g);return;}state.modal={kind:'group',id};showModal(t('分组批量操作 · ')+g.name,html`<div class="group-members">${state.p.characters.filter(c=>c.groupId===id).map(c=>entityChip({kind:'character',id:c.id})).join('')||staticHtml('<span class="muted">此组还没有角色，在角色卡中选择分组。</span>')}</div><label>批量添加标签 · 逗号分隔</label><input id="group-tags" placeholder="例如：同伴, 第一幕登场"><div class="form-row"><div><label>修改技能 / 属性</label><select id="group-field"><option value="none">不修改数值</option>${state.p.definitions.skills.map(k=>html`<option value="skill:${esc(k)}">技能 · ${esc(k)}</option>`).join('')}${state.p.definitions.attributes.map(k=>html`<option value="attribute:${esc(k)}">属性 · ${esc(k)}</option>`).join('')}</select></div><div><label>设为数值</label><input id="group-value" type="number" value="0"></div></div><label>批量给予物品</label><div class="row"><select id="group-item"><option value="">不发放物品</option>${state.p.items.map(i=>`<option value="${esc(i.id)}">${esc(i.name)}</option>`).join('')}</select><input id="group-item-qty" class="number-inline" type="number" min="1" value="1"></div><label>将全组角色加入场景</label><select id="group-scene"><option value="">不加入场景</option>${state.p.scenes.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select><div class="hint">批量数值、物品和标签更新角色库的当前设定。拖动分组标题可将全组加入节点。</div>`,button('modal-close',t('取消'))+button('group-save',t('应用到全组'),'primary'),'');}
+function openGroup(id){
+ const group=ST.find(state.p,'groups',id);
+ if(group.kind==='item'){openItemGroup(group);return;}
+ state.modal={kind:'group',id};
+ showModal(t('分组批量操作 · ')+group.name,html`
+   <label for="character-group-name">分组名称</label><input id="character-group-name" value="${esc(group.name)}">
+   <div class="group-members">${state.p.characters.filter(c=>c.groupId===id)
+     .map(c=>entityChip({kind:'character',id:c.id})).join('')||staticHtml('<span class="muted">此组还没有角色，在角色卡中选择分组。</span>')}</div>
+   <label for="group-tags">批量添加标签 · 逗号分隔</label><input id="group-tags" placeholder="例如：同伴, 第一幕登场">
+   <div class="form-row">
+     <div><label for="group-field">修改技能 / 属性</label><select id="group-field"><option value="none">不修改数值</option>
+     ${state.p.definitions.skills.map(key=>html`<option value="skill:${esc(key)}">技能 · ${esc(key)}</option>`).join('')}
+     ${state.p.definitions.attributes.map(key=>html`<option value="attribute:${esc(key)}">属性 · ${esc(key)}</option>`).join('')}</select></div>
+     <div><label for="group-value">设为数值</label><input id="group-value" type="number" value="0"></div>
+   </div>
+   <label for="group-item">批量给予物品</label>
+   <div class="row"><select id="group-item"><option value="">不发放物品</option>
+     ${state.p.items.map(item=>`<option value="${esc(item.id)}">${esc(item.name)}</option>`).join('')}</select>
+     <input id="group-item-qty" class="number-inline" type="number" min="1" value="1">
+   </div>
+   <label for="group-scene">将全组角色加入场景</label><select id="group-scene"><option value="">不加入场景</option>
+     ${state.p.scenes.map(scene=>`<option value="${esc(scene.id)}">${esc(scene.name)}</option>`).join('')}</select>
+   <div class="hint">批量数值、物品和标签更新角色库的当前设定。拖动分组标题可将全组加入节点。</div>`,
+   deleteEntryButton('group')+button('modal-close',t('取消'))+button('group-save',t('保存分组'),'primary'));
+}
 function openDefinitions(){state.modal={kind:'definitions'};showModal(t('技能与属性设定'),html`<div class="inline-note">每行一个名称。新角色将使用这些默认栏位；已有角色保留自己的自定义栏位。</div><div class="modal-grid"><div><label>默认技能 · 0–10，默认 0</label><textarea id="definitions-skills" rows="10">${esc(state.p.definitions.skills.join('\n'))}</textarea><div class="hint">0：完全未习得<br>6：人类极限<br>7–10：人类能力范围之外</div></div><div><label>默认属性 · 0–100，默认 20</label><textarea id="definitions-attributes" rows="10">${esc(state.p.definitions.attributes.join('\n'))}</textarea></div></div>`,button('modal-close',t('取消'))+button('definitions-save',t('保存设定'),'primary'),'');}
 function openSimulation(startNodeId=state.modal?.startNodeId){
  const start=startNodeId||undefined;
@@ -3278,6 +3421,7 @@ async function modalChange(el){const m=state.modal;if(!m)return;
 document.addEventListener('dblclick',e=>{const attrs=e.target.closest('[data-inventory-item-attrs]');if(attrs&&state.modal?.kind==='character'){captureCharacter();const itemId=attrs.dataset.inventoryItemAttrs,def=state.p.items.find(i=>i.id===itemId);if(def.category==='特殊物品'){toast(t('特殊物品没有属性'));return;}if(!state.modal.draft.itemAttributes)state.modal.draft.itemAttributes={};if(!state.modal.draft.itemAttributes[itemId])state.modal.draft.itemAttributes[itemId]=ST.clone(def.attributes);state.modal.itemEditor=itemId;renderCharacterModal();return;}const el=e.target.closest('[data-inventory-qty]');if(el && state.modal?.kind==='character'){captureCharacter();const id=el.dataset.inventoryQty;el.innerHTML='<input type="number" min="0" max="999999" style="width:80px;padding:3px" data-quantity-edit="'+esc(id)+'" value="'+state.modal.draft.inventory[id]+'">';const input=el.querySelector('input');input.focus();input.select();}});
 document.addEventListener('click',async e=>{try{const remove=e.target.closest('[data-inventory-remove]');if(remove&&state.modal?.kind==='character'){captureCharacter();state.modal.draft.inventory[remove.dataset.inventoryRemove]=0;renderCharacterModal();return;}const attr=e.target.closest('[data-item-remove-attr]');if(attr&&state.modal?.kind==='item'){captureItem();delete state.modal.draft.attributes[attr.dataset.itemRemoveAttr];renderItemModal();return;}const rule=e.target.closest('[data-rule-remove]');if(rule&&state.modal?.kind==='rules'){captureRules();state.modal.draft.rules.splice(Number(rule.dataset.ruleRemove),1);renderRules();return;}const cur=e.target.closest('[data-open-current]');if(cur){openCharacter(cur.dataset.openCurrent,'current');return;}const choice=e.target.closest('[data-trace-choice]');if(choice){state.traceChoices[choice.dataset.traceChoice]=/^\d+$/.test(choice.dataset.choice)?Number(choice.dataset.choice):choice.dataset.choice;openSimulation();}}catch(err){toast(err.message);}});
 async function modalAction(action,e){const m=state.modal;if(!m)return;switch(action){
+ case 'delete-entry':await confirmEntryDeletion(e.target.closest('[data-delete-kind]').dataset.deleteKind,m.id);break;
  case 'item-set-add-entry':{
    const value=$('#item-set-entry').value,split=value.indexOf(':');
    if(split<0)throw Error(t('请先创建物品卡'));
@@ -3302,11 +3446,6 @@ async function modalAction(action,e){const m=state.modal;if(!m)return;switch(act
      if(JSON.stringify(current)!==JSON.stringify(m.original))throw Error(t('该物品组合已在别处更改，草稿仍保留。'));
      return [{type:'itemSet.update',args:{id:m.id,patch:data}}];
    },t('物品组合已保存'));
-   closeModal();
-   break;
- }
- case 'item-set-delete':{
-   await cmd('itemSet.delete',{id:m.id},t('物品组合已移除'));
    closeModal();
    break;
  }
@@ -3351,10 +3490,6 @@ async function modalAction(action,e){const m=state.modal;if(!m)return;switch(act
    $$('[data-outline-card]').find(el=>el.dataset.outlineCard===entry.id)?.scrollIntoView({block:'nearest'});
    break;
  }
- case 'outline-delete':
-   await cmd('outline.delete',{id:m.id},t('已删除，可用 Ctrl+Z 撤销'));
-   closeModal();
-   break;
  case 'attribute-insert':{
    const subitem=$('#attribute-key');
    if(subitem&&!subitem.value)break;
@@ -3557,10 +3692,30 @@ async function modalAction(action,e){const m=state.modal;if(!m)return;switch(act
    break;
  }
  case 'art-save':await cmd('art.update',{id:m.id,name:$('#art-name').value.trim(),category:$('#art-category').value,notes:$('#art-notes').value});closeModal();break;
- case 'art-delete':await cmd('art.delete',{id:m.id},t('图片已移除，可撤销'));closeModal();break;
  case 'transfer-save':{let id=$('#transfer-scene').value;if(id==='new'){const r=await cmd('scene.create',{name:$('#transfer-scene-name').value||t('新场景')});id=r.results[0].id;}const r=await cmd('node.transfer',{ids:m.ids,sceneId:id,copy:m.copy});state.selected=new Set(r.results[0].ids);state.view={x:50,y:60,zoom:.8};closeModal();render();fitGraph();break;}
- case 'group-save':{const members=state.p.characters.filter(c=>c.groupId===m.id),tags=splitTags($('#group-tags').value),field=$('#group-field').value,value=Number($('#group-value').value),itemId=$('#group-item').value,qty=Number($('#group-item-qty').value),sceneId=$('#group-scene').value;const commands=[];
- for(const c of members){const patch={tags:[...new Set([...c.tags,...tags])]};if(field!=='none'){const[k,key]=field.split(':');patch[k==='skill'?'skills':'attributes']={...c[k==='skill'?'skills':'attributes'],[key]:value};}if(itemId)patch.inventory={...c.inventory,[itemId]:(c.inventory[itemId]||0)+qty};commands.push({type:'character.update',args:{id:c.id,patch}});}if(sceneId)commands.push({type:'scene.addCharacters',args:{sceneId,characterIds:members.map(c=>c.id)}});if(!commands.length)throw Error(t('这个分组还没有角色'));await run(commands);closeModal();toast(t('批量操作已保存'));break;}
+ case 'group-save':{
+   const name=$('#character-group-name').value.trim(),tags=splitTags($('#group-tags').value);
+   const field=$('#group-field').value,value=Number($('#group-value').value);
+   const itemId=$('#group-item').value,quantity=Number($('#group-item-qty').value),sceneId=$('#group-scene').value;
+   const scoreField=field.startsWith('skill:')?'skills':'attributes',scoreKey=field.slice(field.indexOf(':')+1);
+   const hasCardChanges=tags.length||field!=='none'||itemId;
+   await run(()=>{
+     const members=state.p.characters.filter(card=>card.groupId===m.id);
+     if((hasCardChanges||sceneId)&&!members.length)throw Error(t('这个分组还没有角色'));
+     if(itemId&&(!Number.isInteger(quantity)||quantity<1))throw Error(t('物品数量须为 1–999999 的整数'));
+     const commands=[{type:'group.rename',args:{id:m.id,name}}];
+     if(hasCardChanges)for(const card of members){
+       const patch={tags:[...new Set([...card.tags,...tags])]};
+       if(field!=='none')patch[scoreField]={...card[scoreField],[scoreKey]:value};
+       if(itemId)patch.inventory={...card.inventory,[itemId]:(card.inventory[itemId]||0)+quantity};
+       commands.push({type:'character.update',args:{id:card.id,patch}});
+     }
+     if(sceneId)commands.push({type:'scene.addCharacters',args:{sceneId,characterIds:members.map(card=>card.id)}});
+     return commands;
+   },t('分组已保存'));
+   closeModal();
+   break;
+ }
  case 'definitions-save':{const parse=id=>$('#'+id).value.split('\n').map(s=>s.trim()).filter(Boolean);await cmd('definitions.update',{skills:parse('definitions-skills'),attributes:parse('definitions-attributes')});closeModal();break;}
  case 'simulate-again':state.traceChoices={};state.traceInputs={};openSimulation($('#simulate-start').value);break;
  case 'simulate-name':
@@ -3901,6 +4056,7 @@ const english = {
   "地点": "Location",
   "地点名称": "Location name",
   "编辑地点": "Edit location",
+  "删除地点": "Delete location",
   "新建地点": "New location",
   "未指定地点": "No location",
   "指定地点": "Assign location",
@@ -4113,6 +4269,36 @@ const english = {
   "本段剧情推演结束": "End of this path",
   "编辑场景当前状态": "Edit current scene state",
   "编辑当前场景": "Edit current scene",
+  "编辑场景": "Edit scene",
+  "编辑分组": "Edit group",
+  "打开场景": "Open scene",
+  "无法删除": "Cannot delete",
+  "确认删除": "Confirm deletion",
+  "删除场景节点": "Scene nodes removed",
+  "删除场景连线": "Scene connections removed",
+  "解除其他场景的跳转或回溯引用": "Nodes with jump or rollback references cleared",
+  "删除场景角色快照": "Scene character snapshots removed",
+  "删除地图布局": "Map layouts removed",
+  "移除地图角色标记": "Map character markers removed",
+  "将子地点移至上一级": "Sublocations moved up one level",
+  "移除地图上的地点区域": "Map location areas removed",
+  "移除相关地图路线": "Map routes removed",
+  "涉及的节点": "Affected nodes",
+  "涉及的场景": "Affected scenes",
+  "涉及的角色卡": "Affected character cards",
+  "涉及的物品组合": "Affected item sets",
+  "解除大纲的地点指定": "Outline location assignments cleared",
+  "取消卡片的分组归属": "Cards ungrouped",
+  "清除地图底图": "Map backgrounds cleared",
+  "移除地图图片物体": "Map image objects removed",
+  "项目至少需要保留一个场景": "The project must keep at least one scene.",
+  "角色仍有剧情或场景引用，请先解除引用": "This character is still used in the story or a scene. Remove those references first.",
+  "物品仍在使用，请先解除引用": "This item is still in use. Remove its references first.",
+  "分组仍被剧情变化引用，请先移除对应变化": "This group is still used in story changes. Remove those changes first.",
+  "此物品组合正在被其他组合使用": "This item set is used by another item set.",
+  "保存后可用 Ctrl+Z 撤销。": "Use Ctrl+Z to undo this deletion.",
+  "项目已更改，请取消后重新查看删除影响。": "The project changed. Cancel and reopen the deletion preview.",
+  "分组已保存": "Group saved",
   "编辑角色卡": "Edit character",
   "编辑结构化规则 ·": "Edit rules ·",
   "编辑物品卡": "Edit item",
@@ -4598,9 +4784,9 @@ const english = {
 };
 
 const {renderTree,renderTreeContents,renderTreeSearchResults,syncTreeProject,scopeFields,readStoryScope}=createStoryTreeView({state,$,ST,t,esc,html,message,button,icon,nodeType,dateLabel,locationName,locationById,DEFAULT_LOCATION_COLOR,nodePreview,changeText,locationOptions,speakerName,formatReferenceValue,previewCharacterText,renderOutlineText,outlineLinkLabel,getTimelineEntries,getSearchEntries,searchSnippet,searchLimit});
-const {renderCharacterImport,characterImportPreview,renderCharacterModal}=createCharacterCardView({state,ST,t,esc,html,staticHtml,button,icon,showModal,avatar,charName,itemName,itemSetName,entityChip,renderCharacterReferenceTray,renderCharacterItemSets});
+const {renderCharacterImport,characterImportPreview,renderCharacterModal}=createCharacterCardView({state,ST,t,esc,html,staticHtml,button,icon,showModal,deleteEntryButton,avatar,charName,itemName,itemSetName,entityChip,renderCharacterReferenceTray,renderCharacterItemSets});
 const sceneMapView=createSceneMapView({state,ST,$,esc,html,t,button,icon,currentScene,locationsInOrder,locationById,
-  locationName,locationOptions,defaultColor:DEFAULT_LOCATION_COLOR,run,render,toast,openLocation,openCharacter,openMapObject,focusMapArea,renderLocationCard,saveDisplaySettings});
+  locationName,locationOptions,defaultColor:DEFAULT_LOCATION_COLOR,run,render,toast,openLocation,openCharacter,openMapObject,focusMapArea,renderLocationCard,locationCardActions,saveDisplaySettings});
 const pluginView=createPluginView({state,ST,$,esc,html,t,button,showModal,closeModal,toast,run,updateSave,flushDrafts,focusNode,selectedNode});
 const textFind=createTextFindReplace({ST,t,html,getModal:()=>state.modal,getProjectId:()=>state.p?.id,editorNodeId,focusEditor:focusNodeEditor});
 sceneMapView.bind();
